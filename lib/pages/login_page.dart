@@ -14,21 +14,22 @@ class _LoginPageState extends State<LoginPage> {
   bool isLogin = true;
   bool isPasswordVisible = false;
 
+  final TextEditingController _controllerUsername = TextEditingController();
   final TextEditingController _controllerEmail = TextEditingController();
   final TextEditingController _controllerPassword = TextEditingController();
 
   Future<void> signInWithEmailAndPassword() async {
     try {
       await Auth().signInWithEmailAndPassword(
-        email: _controllerEmail.text,
+        email: _controllerEmail.text, // Use username as email
         password: _controllerPassword.text,
       );
     } on FirebaseAuthException catch (e) {
       setState(() {
         if (e.code == 'invalid-email') {
-          errorMessage = 'Please provide a valid email';
+          errorMessage = 'Please provide a valid username';
         } else {
-          errorMessage = 'Incorrect Email or Password';
+          errorMessage = 'Incorrect Username or Password';
         }
       });
     }
@@ -40,6 +41,9 @@ class _LoginPageState extends State<LoginPage> {
         email: _controllerEmail.text,
         password: _controllerPassword.text,
       );
+      // Update user profile with username
+      User? user = FirebaseAuth.instance.currentUser;
+      await user?.updateProfile(displayName: _controllerUsername.text);
     } on FirebaseAuthException catch (e) {
       setState(() {
         if (e.code == 'invalid-email') {
@@ -62,7 +66,7 @@ class _LoginPageState extends State<LoginPage> {
   Widget _entryField(String title, TextEditingController controller, bool isPassword) {
     return TextFormField(
       controller: controller,
-      obscureText: isPassword && !isPasswordVisible, // Show password if isPasswordVisible is true
+      obscureText: isPassword && !isPasswordVisible,
       decoration: InputDecoration(
         labelText: title,
         border: OutlineInputBorder(borderRadius: BorderRadius.circular(8.0)),
@@ -70,10 +74,10 @@ class _LoginPageState extends State<LoginPage> {
         fillColor: Colors.green[50],
         suffixIcon: isPassword
             ? IconButton(
-                icon: Icon(isPasswordVisible ? Icons.visibility : Icons.visibility_off), // Toggle visibility icon
+                icon: Icon(isPasswordVisible ? Icons.visibility : Icons.visibility_off),
                 onPressed: () {
                   setState(() {
-                    isPasswordVisible = !isPasswordVisible; // Toggle password visibility
+                    isPasswordVisible = !isPasswordVisible;
                   });
                 },
               )
@@ -120,8 +124,12 @@ class _LoginPageState extends State<LoginPage> {
             children: <Widget>[
               _logo(),
               const SizedBox(height: 20),
-              _entryField('Email', _controllerEmail, false),
+              if (!isLogin) _entryField('Username', _controllerUsername, false),
+              // if (!isLogin) const SizedBox(height: 20),
+              if (isLogin) _entryField('Email', _controllerEmail, false),
               const SizedBox(height: 20),
+              if (!isLogin) _entryField('Email', _controllerEmail, false),
+              if (!isLogin) const SizedBox(height: 20),
               _entryField('Password', _controllerPassword, true),
               const SizedBox(height: 20),
               _errorMessage(),

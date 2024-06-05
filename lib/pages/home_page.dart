@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:glife/auth.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'accessories.dart';
+import 'ProfilePage.dart';
 
 class HomePage extends StatefulWidget {
   const HomePage({Key? key}) : super(key: key);
@@ -40,11 +41,23 @@ class _HomePageState extends State<HomePage> {
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             Text(
-              user?.email ?? 'User email',
+              'Welcome ' + (user?.displayName ?? 'User email'),
               style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
             ),
-            const SizedBox(height: 20),
-            Image.asset('assets/images/character.jpeg'),
+            // const SizedBox(height: 20),
+            GestureDetector(
+              onTap: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (context) => const ProfilePage()),
+                );
+              },
+              child: Image.asset(
+                'assets/images/character.jpeg',
+                width: 300, // Adjust width as needed
+                height: 300, // Adjust height as needed
+              ),
+            ),
             const SizedBox(height: 20),
             ElevatedButton.icon(
               onPressed: () {
