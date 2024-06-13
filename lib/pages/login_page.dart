@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:glife/auth.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:health/health.dart';
 
 class LoginPage extends StatefulWidget {
   const LoginPage({Key? key}) : super(key: key);
@@ -17,12 +19,28 @@ class _LoginPageState extends State<LoginPage> {
   final TextEditingController _controllerEmail = TextEditingController();
   final TextEditingController _controllerPassword = TextEditingController();
 
+  final FirebaseFirestore _firestore = FirebaseFirestore.instance;
+
+  Future<void> checkFirstLogin(String userId) async {
+    DocumentSnapshot userDoc = await _firestore.collection('users').doc(userId).get();
+    if (!userDoc.exists) {
+      // Store user email
+      await _firestore.collection('users').doc(userId).set({
+        'email': _controllerEmail.text,       
+      });
+    }
+  }
+
+
+
   Future<void> signInWithEmailAndPassword() async {
     try {
-      await Auth().signInWithEmailAndPassword(
+      UserCredential userCredential = await Auth().signInWithEmailAndPassword(
         email: _controllerEmail.text,
         password: _controllerPassword.text,
       );
+      await checkFirstLogin(userCredential.user!.uid);
+      // Navigate to HomePage or any other page
     } on FirebaseAuthException catch (e) {
       setState(() {
         if (e.code == 'invalid-email') {
@@ -36,10 +54,12 @@ class _LoginPageState extends State<LoginPage> {
 
   Future<void> createUserWithEmailAndPassword() async {
     try {
-      await Auth().createUserWithEmailAndPassword(
+      UserCredential userCredential = await Auth().createUserWithEmailAndPassword(
         email: _controllerEmail.text,
         password: _controllerPassword.text,
       );
+      await checkFirstLogin(userCredential.user!.uid);
+      // Navigate to HomePage or any other page
     } on FirebaseAuthException catch (e) {
       setState(() {
         if (e.code == 'invalid-email') {
@@ -62,7 +82,7 @@ class _LoginPageState extends State<LoginPage> {
   Widget _entryField(String title, TextEditingController controller, bool isPassword) {
     return TextFormField(
       controller: controller,
-      obscureText: isPassword && !isPasswordVisible, // Show password if isPasswordVisible is true
+      obscureText: isPassword && !isPasswordVisible,
       decoration: InputDecoration(
         labelText: title,
         border: OutlineInputBorder(borderRadius: BorderRadius.circular(8.0)),
@@ -70,10 +90,10 @@ class _LoginPageState extends State<LoginPage> {
         fillColor: Colors.green[50],
         suffixIcon: isPassword
             ? IconButton(
-                icon: Icon(isPasswordVisible ? Icons.visibility : Icons.visibility_off), // Toggle visibility icon
+                icon: Icon(isPasswordVisible ? Icons.visibility : Icons.visibility_off),
                 onPressed: () {
                   setState(() {
-                    isPasswordVisible = !isPasswordVisible; // Toggle password visibility
+                    isPasswordVisible = !isPasswordVisible;
                   });
                 },
               )

@@ -1,5 +1,7 @@
 package com.example.glife
 
-import io.flutter.embedding.android.FlutterActivity
+import io.flutter.embedding.android.FlutterFragmentActivity
 
-class MainActivity: FlutterActivity()
+class MainActivity: FlutterFragmentActivity() {
+    // Additional configurations or methods if needed
+}
