@@ -27,10 +27,8 @@ class _HomePageState extends State<HomePage> with SingleTickerProviderStateMixin
   late Animation<double> _animation;
   int goalSteps = 1000;
   int goalExercise = 30; // Daily exercise goal in minutes
-  late Stream<int> stepCountStream;
-  late Stream<int> exerciseCountStream;
-  late StreamSubscription<int> stepCountSubscription;
-  late StreamSubscription<int> exerciseCountSubscription;
+  late StreamController<int> _stepCountController;
+  late StreamController<int> _exerciseCountController;
 
   @override
   void initState() {
@@ -50,18 +48,22 @@ class _HomePageState extends State<HomePage> with SingleTickerProviderStateMixin
     );
     _controller.forward();
 
+    // Initialize StreamController
+    _stepCountController = StreamController<int>.broadcast();
+    _exerciseCountController = StreamController<int>.broadcast();
+
     // Set up the step count stream
-    stepCountStream = Stream.periodic(Duration(seconds: 10)).asyncMap((_) => fetchStepData());
+    Timer.periodic(Duration(seconds: 10), (timer) => fetchStepData());
 
     // Set up the exercise count stream
-    exerciseCountStream = Stream.periodic(Duration(seconds: 10)).asyncMap((_) => fetchExerciseData());
+    Timer.periodic(Duration(seconds: 10), (timer) => fetchExerciseData());
   }
 
   @override
   void dispose() {
     // Cancel stream subscriptions
-    stepCountSubscription.cancel();
-    exerciseCountSubscription.cancel();
+    _stepCountController.close();
+    _exerciseCountController.close();
     // Dispose animation controller
     _controller.dispose();
     super.dispose();
@@ -98,6 +100,8 @@ class _HomePageState extends State<HomePage> with SingleTickerProviderStateMixin
       setState(() {
         noSteps = steps;
       });
+
+      _stepCountController.add(steps); // Add steps data to stream
     } else {
       debugPrint("Authorization not granted - error in authorization");
     }
@@ -129,6 +133,8 @@ class _HomePageState extends State<HomePage> with SingleTickerProviderStateMixin
       setState(() {
         noExercise = exercise;
       });
+
+      _exerciseCountController.add(exercise); // Add exercise data to stream
     } else {
       debugPrint("Authorization not granted for exercise - error in authorization");
     }
@@ -272,7 +278,7 @@ String _getUserFirstName() {
         ScaleTransition(
           scale: _animation,
           child: StreamBuilder<int>(
-            stream: stepCountStream,
+            stream: _stepCountController.stream,
             builder: (context, snapshot) {
               if (snapshot.connectionState == ConnectionState.waiting) {
                 return CircularProgressIndicator();
@@ -347,7 +353,7 @@ String _getUserFirstName() {
         ScaleTransition(
           scale: _animation,
           child: StreamBuilder<int>(
-            stream: exerciseCountStream,
+            stream: _exerciseCountController.stream,
             builder: (context, snapshot) {
               if (snapshot.connectionState == ConnectionState.waiting) {
                 return CircularProgressIndicator();
