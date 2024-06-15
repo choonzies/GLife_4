@@ -3,6 +3,8 @@ import 'package:glife/auth.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'accessories.dart';
 import 'ProfilePage.dart';
+import 'Info/Info.dart';
+import 'Social/Friends.dart';
 
 class HomePage extends StatefulWidget {
   const HomePage({Key? key}) : super(key: key);
@@ -102,9 +104,23 @@ class _HomePageState extends State<HomePage> {
   }
 
   void _onItemTapped(int index) {
-    setState(() {
-      _selectedIndex = index;
-    });
+    // setState(() {
+    //   _selectedIndex = index;
+    // });
+
+    if (index == 0) {
+      Navigator.push(
+        context,
+        MaterialPageRoute(builder: (context) => Info()),
+      );
+    } else if (index == 1) {
+      // do nothing
+    } else {
+      Navigator.push(
+        context,
+        MaterialPageRoute(builder: (context) => Friends()),
+      );
+    }
   }
 
   @override
@@ -134,15 +150,15 @@ class _HomePageState extends State<HomePage> {
       bottomNavigationBar: BottomNavigationBar(
         items: const <BottomNavigationBarItem>[
           BottomNavigationBarItem(
-            icon: Icon(Icons.emoji_events),
-            label: 'Achievements',
+            icon: Icon(Icons.library_books_sharp),
+            label: 'Info',
           ),
           BottomNavigationBarItem(
-            icon: Icon(Icons.person),
+            icon: Icon(Icons.face),
             label: 'Me',
           ),
           BottomNavigationBarItem(
-            icon: Icon(Icons.group),
+            icon: Icon(Icons.groups),
             label: 'Groups',
           ),
         ],
