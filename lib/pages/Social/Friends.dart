@@ -5,6 +5,7 @@ class Friends extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
+        backgroundColor: Colors.blue,
         title: Text('My Friends'),
       ),
       body: ListView(

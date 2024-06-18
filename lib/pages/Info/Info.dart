@@ -7,19 +7,13 @@ class Info extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        backgroundColor: Colors.blue, // Replace with your desired app bar color
+        backgroundColor: Colors.blue,
         title: Text(
           'My Health Information',
           style: TextStyle(
             fontFamily: 'Readex Pro',
             letterSpacing: 0,
           ),
-        ),
-        leading: IconButton(
-          icon: Icon(Icons.arrow_back, color: Colors.black, size: 30),
-          onPressed: () {
-            Navigator.of(context).pop();
-          },
         ),
       ),
       body: SingleChildScrollView(
