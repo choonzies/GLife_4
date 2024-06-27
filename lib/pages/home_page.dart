@@ -3,11 +3,15 @@ import 'package:glife/auth.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:glife/pages/accessories.dart';
+import 'package:glife/pages/profile.dart';
 import 'package:health/health.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'dart:async';
-import 'steps_chart_page.dart'; // Import the new page
-import 'exercise_chart_page.dart'; // Import the new page for exercise data
+import 'steps_chart_page.dart';
+import 'exercise_chart_page.dart';
+import 'package:carousel_slider/carousel_slider.dart';
 
+  int goalSteps = 1000;
 class HomePage extends StatefulWidget {
   const HomePage({Key? key}) : super(key: key);
 
@@ -29,6 +33,8 @@ class _HomePageState extends State<HomePage> with SingleTickerProviderStateMixin
   int goalExercise = 30; // Daily exercise goal in minutes
   late StreamController<int> _stepCountController;
   late StreamController<int> _exerciseCountController;
+
+  
 
   @override
   void initState() {
@@ -52,11 +58,14 @@ class _HomePageState extends State<HomePage> with SingleTickerProviderStateMixin
     _stepCountController = StreamController<int>.broadcast();
     _exerciseCountController = StreamController<int>.broadcast();
 
+    // Load saved goals
+    _loadGoals();
+
     // Set up the step count stream
     Timer.periodic(Duration(seconds: 10), (timer) => fetchStepData());
 
     // Set up the exercise count stream
-    Timer.periodic(Duration(seconds: 10), (timer) => fetchExerciseData());
+    Timer.periodic(Duration(seconds: 10), (timer) => fetchActiveEnergyData());
   }
 
   @override
@@ -108,38 +117,77 @@ class _HomePageState extends State<HomePage> with SingleTickerProviderStateMixin
     return steps;
   }
 
-  Future<int> fetchExerciseData() async {
-    int exercise = 0;
 
-    // Get exercise minutes for today (i.e., since midnight)
-    final now = DateTime.now();
-    final midnight = DateTime(now.year, now.month, now.day);
 
-    bool exercisePermission = await Health().hasPermissions([HealthDataType.EXERCISE_TIME]) ?? false;
-    if (!exercisePermission) {
-      exercisePermission = await Health().requestAuthorization([HealthDataType.EXERCISE_TIME]);
-    }
 
-    if (exercisePermission) {
-      try {
-        // Replace the following line with the actual method to fetch exercise minutes
-        // Example: exercise = await Health().getTotalExerciseMinutesInInterval(midnight, now) ?? 0;
-        
-      } catch (error) {
-        debugPrint("Exception in fetching exercise minutes: $error");
-      }
-      await logDailyExercise(user!.uid, exercise);
 
-      setState(() {
-        noExercise = exercise;
-      });
 
-      _exerciseCountController.add(exercise); // Add exercise data to stream
-    } else {
-      debugPrint("Authorization not granted for exercise - error in authorization");
-    }
-    return exercise;
+Future<int> fetchActiveEnergyData() async {
+  int activeCalories = 0;
+  var types = [HealthDataType.ACTIVE_ENERGY_BURNED];
+
+  // Get active calories for today (i.e., since midnight)
+  final now = DateTime.now();
+  final midnight = DateTime(now.year, now.month, now.day);
+
+  bool caloriesPermission = await Health().hasPermissions(types) ?? false;
+  if (!caloriesPermission) {
+    caloriesPermission = await Health().requestAuthorization(types);
   }
+
+  if (caloriesPermission) {
+    try {
+      // Fetch active calories data points from today
+      List<HealthDataPoint> healthData = await Health().getHealthDataFromTypes(
+        startTime: midnight,
+        endTime: now,
+        types: types,
+      );
+
+      // Sum up the active calories from all data points
+      int cal = 0;
+      for (HealthDataPoint dataPoint in healthData) {
+        cal = dataPoint.toJson()['value'].numericValue.toInt();
+        activeCalories +=  cal; 
+      }
+    } catch (error) {
+      debugPrint("Exception in fetching active calories: $error");
+    }
+
+    // Log daily active calories to Firestore
+    await logDailyActiveCalories(user!.uid, activeCalories);
+
+    // Update state and stream controller with active calories data
+    setState(() {
+      noExercise = activeCalories;
+    });
+    _exerciseCountController.add(activeCalories);
+  } else {
+    debugPrint("Authorization not granted for active calories - error in authorization");
+  }
+
+  return activeCalories;
+}
+
+
+
+
+
+
+
+
+Future<void> logDailyActiveCalories(String userId, int activeCalories) async {
+  var now = DateTime.now();
+  var midnight = DateTime(now.year, now.month, now.day);
+
+  await _firestore.collection('users').doc(userId)
+      .collection('days').doc(midnight.toIso8601String())
+      .collection('active_calories').add({
+    'active_calories': activeCalories,
+    'timestamp': now,
+  });
+}
+
 
   Future<void> logDailySteps(String userId, int steps) async {
     var now = DateTime.now();
@@ -165,261 +213,92 @@ class _HomePageState extends State<HomePage> with SingleTickerProviderStateMixin
     });
   }
 
-  int getUserStreak() {
-    return 5; // Replace with actual logic
-  }
-
-  String getBedtime() {
-    return '10:30 PM'; // Replace with actual logic
-  }
-
-List<Widget> _widgetOptions() {
-  return <Widget>[
-    const Center(child: Text('Achievements')),
-    SingleChildScrollView(
-      padding: EdgeInsets.symmetric(horizontal: 20),
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          FadeTransition(
-            opacity: _animation,
-            child: Text(
-              "Welcome back, ${_getUserFirstName()}!",
-              style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
-            ),
-          ),
-          const SizedBox(height: 20),
-          Image.asset('assets/images/character.jpeg'),
-          const SizedBox(height: 20),
-          ElevatedButton.icon(
-            onPressed: () {
-              Navigator.push(
-                context,
-                PageRouteBuilder(
-                  pageBuilder: (context, animation, secondaryAnimation) => AccessoriesPage(),
-                  transitionsBuilder: (context, animation, secondaryAnimation, child) {
-                    return FadeTransition(
-                      opacity: animation,
-                      child: child,
-                    );
-                  },
-                ),
-              );
-            },
-            icon: const Icon(Icons.checkroom),
-            label: const Text(''),
-            style: ElevatedButton.styleFrom(textStyle: const TextStyle(fontSize: 16)),
-          ),
-          SizedBox(height: 20),
-          GestureDetector(
-            onTap: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(builder: (context) => StepsChartPage()),
-              );
-            },
-            child: _buildStepProgressBar(),
-          ),
-          GestureDetector(
-            onTap: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(builder: (context) => ExerciseChartPage()),
-              );
-            },
-            child: _buildExerciseProgressBar(),
-          ),
-          SizedBox(height: 16),
-          Column(
-            children: [
-              Text(
-                'Your Bedtime Today:',
-                style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-              ),
-              Text(
-                getBedtime(),
-                style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
-              ),
-            ],
-          ),
-          SizedBox(height: 200),
-          ElevatedButton(
-            onPressed: () async {
-              await Auth().signOut();
-            },
-            child: const Text('Sign Out'),
-          ),
-        ],
-      ),
-    ),
-    const Center(child: Text('Groups')),
-  ];
-}
-
-String _getUserFirstName() {
-  if (user != null && user!.email != null) {
-    return user!.email!.split('@')[0];
-  } else {
-    return 'User';
-  }
-}
-
-
-
-  Widget _buildStepProgressBar() {
-    // Define the goal number of steps
-    return Column(
-      children: [
-        Text(
-          'Steps Today',
-          style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-        ),
-        const SizedBox(height: 8),
-        ScaleTransition(
-          scale: _animation,
-          child: StreamBuilder<int>(
-            stream: _stepCountController.stream,
-            builder: (context, snapshot) {
-              if (snapshot.connectionState == ConnectionState.waiting) {
-                return CircularProgressIndicator();
-              } else if (snapshot.hasError) {
-                return Text('Error: ${snapshot.error}');
-              } else if (!snapshot.hasData) {
-                return Text('No data');
-              } else {
-                final progress = snapshot.data! / goalSteps;
-                return Column(
-                  children: [
-                    Container(
-                      width: 300, // Fixed width for the progress bar
-                      height: 20,
-                      decoration: BoxDecoration(
-                        borderRadius: BorderRadius.circular(10),
-                        color: Colors.grey[300],
-                      ),
-                      child: Stack(
-                        children: [
-                          ClipRRect(
-                            borderRadius: BorderRadius.circular(10),
-                            child: FractionallySizedBox(
-                              widthFactor: progress.clamp(0.0, 1.0), // Ensure progress is between 0 and 1
-                              child: Container(
-                                decoration: BoxDecoration(
-                                  borderRadius: BorderRadius.circular(10),
-                                  color: Color.fromARGB(255, 33, 243, 114),
-                                ),
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                    const SizedBox(height: 8),
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Icon(Icons.directions_walk, color: Colors.teal, size: 24),
-                        const SizedBox(width: 8),
-                        Text(
-                          '${snapshot.data!} / $goalSteps',
-                          style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
-                        ),
-                        const SizedBox(width: 8),
-                        Text(
-                          '(${(progress * 100).toStringAsFixed(1)}%)',
-                          style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.teal),
-                        ),
-                      ],
-                    ),
-                  ],
-                );
-              }
-            },
-          ),
-        ),
-      ],
-    );
-  }
-
-  Widget _buildExerciseProgressBar() {
-    // Define the goal number of exercise minutes
-    return Column(
-      children: [
-        Text(
-          'Exercise Today',
-          style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-        ),
-        const SizedBox(height: 8),
-        ScaleTransition(
-          scale: _animation,
-          child: StreamBuilder<int>(
-            stream: _exerciseCountController.stream,
-            builder: (context, snapshot) {
-              if (snapshot.connectionState == ConnectionState.waiting) {
-                return CircularProgressIndicator();
-              } else if (snapshot.hasError) {
-                return Text('Error: ${snapshot.error}');
-              } else if (!snapshot.hasData) {
-                return Text('No data');
-              } else {
-                final progress = snapshot.data! / goalExercise;
-                return Column(
-                  children: [
-                    Container(
-                      width: 300, // Fixed width for the progress bar
-                      height: 20,
-                      decoration: BoxDecoration(
-                        borderRadius: BorderRadius.circular(10),
-                        color: Colors.grey[300],
-                      ),
-                      child: Stack(
-                        children: [
-                          ClipRRect(
-                            borderRadius: BorderRadius.circular(10),
-                            child: FractionallySizedBox(
-                              widthFactor: progress.clamp(0.0, 1.0), // Ensure progress is between 0 and 1
-                              child: Container(
-                                decoration: BoxDecoration(
-                                  borderRadius: BorderRadius.circular(10),
-                                  color: Colors.blue, // Change color for exercise progress
-                                ),
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                    const SizedBox(height: 8),
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Icon(Icons.directions_run, color: Colors.blue, size: 24),
-                        const SizedBox(width: 8),
-                        Text(
-                          '${snapshot.data!} / $goalExercise minutes',
-                          style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
-                        ),
-                        const SizedBox(width: 8),
-                        Text(
-                          '(${(progress * 100).toStringAsFixed(1)}%)',
-                          style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.blue),
-                        ),
-                      ],
-                    ),
-                  ],
-                );
-              }
-            },
-          ),
-        ),
-      ],
-    );
-  }
-
-  void _onItemTapped(int index) {
+  Future<void> _loadGoals() async {
+    SharedPreferences prefs = await SharedPreferences.getInstance();
     setState(() {
-      _selectedIndex = index;
+      goalSteps = prefs.getInt('goalSteps') ?? 1000;
+      goalExercise = prefs.getInt('goalExercise') ?? 30;
     });
+  }
+
+  Future<void> _saveGoals() async {
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+    await prefs.setInt('goalSteps', goalSteps);
+    await prefs.setInt('goalExercise', goalExercise);
+  }
+
+  Future<int> getUserStreak() async {
+    // Replace with actual logic to retrieve user streak from a data source
+    return 5; // Placeholder return value
+  }
+
+Future<String> getBedtime() async {
+    DateTime now = DateTime.now();
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+    String bedtimeStr = prefs.getString('bedtime') ?? '22:30';
+    List<String> timeParts = bedtimeStr.split(':');
+    int hours = int.parse(timeParts[0]);
+    int minutes = int.parse(timeParts[1]);
+    DateTime bedtime = DateTime(now.year, now.month, now.day, hours, minutes);
+    if (now.isAfter(bedtime)) {
+      bedtime = bedtime.add(Duration(days: 1)); // Move to the next day if bedtime has passed
+    }
+    Duration duration = bedtime.difference(now);
+    int leftHours = duration.inHours;
+    int leftMinutes = duration.inMinutes % 60;
+    return 'Time left to bedtime: ${leftHours}h ${leftMinutes}m';
+  }
+  Future<void> setBedtime(BuildContext context) async {
+    TimeOfDay initialTime = TimeOfDay(hour: 22, minute: 30);
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+    String bedtimeStr = prefs.getString('bedtime') ?? '22:30';
+    List<String> timeParts = bedtimeStr.split(':');
+    int hours = int.parse(timeParts[0]);
+    int minutes = int.parse(timeParts[1]);
+    initialTime = TimeOfDay(hour: hours, minute: minutes);
+
+    TimeOfDay? selectedTime = await showTimePicker(
+      context: context,
+      initialTime: initialTime,
+    );
+
+    if (selectedTime != null) {
+      setState(() {
+        String formattedTime = '${selectedTime.hour.toString().padLeft(2, '0')}:${selectedTime.minute.toString().padLeft(2, '0')}';
+        prefs.setString('bedtime', formattedTime);
+      });
+    }
+  }
+
+
+  void _showMenuOptions(BuildContext context) {
+    showModalBottomSheet(
+      context: context,
+      builder: (BuildContext context) {
+        return Wrap(
+          children: <Widget>[
+            ListTile(
+              leading: Icon(Icons.person),
+              title: Text('View Profile'),
+              onTap: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (context) => ProfilePage()), // Navigate to ProfilePage
+                );
+              },
+            ),
+            ListTile(
+              leading: Icon(Icons.logout),
+              title: Text('Logout'),
+              onTap: () async {
+                await Auth().signOut();
+                Navigator.pop(context); // Close the bottom sheet
+              },
+            ),
+          ],
+        );
+      },
+    );
   }
 
   void _showChangeGoalDialog(String title, String labelText) {
@@ -443,6 +322,7 @@ String _getUserFirstName() {
                   } else if (title == 'Change Exercise Goal') {
                     goalExercise = int.parse(_textController.text);
                   }
+                  _saveGoals(); // Save the new goals
                 });
                 Navigator.of(context).pop();
               },
@@ -452,20 +332,185 @@ String _getUserFirstName() {
       },
     );
   }
+void _showChangeBedtimeDialog(BuildContext context) async {
+  SharedPreferences prefs = await SharedPreferences.getInstance();
+  String bedtimeStr = prefs.getString('bedtime') ?? '22:30'; // Default bedtime if not set
+  List<String> timeParts = bedtimeStr.split(':');
+  int hours = int.parse(timeParts[0]);
+  int minutes = int.parse(timeParts[1]);
+  TimeOfDay initialTime = TimeOfDay(hour: hours, minute: minutes);
+
+  // Show time picker dialog
+  TimeOfDay? selectedTime = await showTimePicker(
+    context: context,
+    initialTime: initialTime,
+  );
+
+  // If the user selects a time, update the bedtime in SharedPreferences
+  if (selectedTime != null) {
+    String formattedTime = '${selectedTime.hour.toString().padLeft(2, '0')}:${selectedTime.minute.toString().padLeft(2, '0')}';
+    try {
+      await prefs.setString('bedtime', formattedTime);
+      setState(() {}); // Update the UI if necessary
+    } catch (error) {
+      print('Error changing bedtime: $error');
+      // Handle error gracefully (show snackbar, log error, etc.)
+    }
+  }
+}
 
 
-@override
+
+
+
+ @override
+ @override
 Widget build(BuildContext context) {
+  List<Widget> _widgetOptions = <Widget>[
+    Center(child: Text('Achievements')),
+    SingleChildScrollView(
+      padding: EdgeInsets.symmetric(horizontal: 20, vertical: 20),
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.start,
+        crossAxisAlignment: CrossAxisAlignment.center,
+        children: [
+          SizedBox(height: 20),
+          Text(
+            "Welcome back, ${_getUserFirstName()}!",
+            style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
+          ),
+          SizedBox(height: 10),
+          // Larger character image below the welcome message
+          GestureDetector(
+            onTap: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (context) => AccessoriesPage()),
+              );
+            },
+            child: Container(
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.grey.withOpacity(0.5),
+                    spreadRadius: 5,
+                    blurRadius: 7,
+                    offset: Offset(0, 3), // changes position of shadow
+                  ),
+                ],
+              ),
+              child: Image.asset(
+                'assets/images/c2.jpg',
+                width: 300,
+                height: 400,
+                fit: BoxFit.contain, // Ensure the entire image is visible without cropping
+              ),
+            ),
+          ),
+
+          SizedBox(height: 20),
+          GestureDetector(
+            onTap: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (context) => StepsChartPage()),
+              );
+            },
+            child: Card(
+              elevation: 5,
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+              child: Padding(
+                padding: const EdgeInsets.all(16.0),
+                child: _buildStepProgressBar(),
+              ),
+            ),
+          ),
+          GestureDetector(
+            onTap: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (context) => ActiveEnergyChartPage()),
+              );
+            },
+            child: Card(
+              elevation: 5,
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+              child: Padding(
+                padding: const EdgeInsets.all(16.0),
+                child: _buildExerciseProgressBar(),
+              ),
+            ),
+          ),
+          SizedBox(height: 20),
+          Card(
+            elevation: 5,
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+            child: Padding(
+              padding: const EdgeInsets.all(16.0),
+              child: Column(
+                children: [
+                  FutureBuilder<String>(
+                    future: getBedtime(),
+                    builder: (context, snapshot) {
+                      if (snapshot.connectionState == ConnectionState.waiting) {
+                        return CircularProgressIndicator();
+                      } else if (snapshot.hasData) {
+                        return Text(
+                          snapshot.data!,
+                          style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
+                        );
+                      } else {
+                        return Text(
+                          'Error fetching bedtime',
+                          style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
+                        );
+                      }
+                    },
+                  ),
+                  SizedBox(height: 16),
+                  ElevatedButton(
+                    onPressed: () {
+                      _showChangeBedtimeDialog(context);
+                    },
+                    child: Text('Change Bedtime'),
+                  ),
+                ],
+              ),
+            ),
+          ),
+          SizedBox(height: 40),
+          ElevatedButton(
+            onPressed: () async {
+              await Auth().signOut();
+            },
+            child: Text('Sign Out'),
+          ),
+        ],
+      ),
+    ),
+    Center(child: Text('Groups')),
+  ];
+
   return Scaffold(
     appBar: AppBar(
-      backgroundColor: Color.fromARGB(255, 11, 143, 110),
+      title: Text('GLife'),
+      backgroundColor: Colors.green,
       elevation: 0,
-      leading: IconButton(
-        icon: Icon(
-          Icons.menu,
-          color: Colors.black87,
+      flexibleSpace: Container(
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+            colors: <Color>[Colors.green, Colors.blue],
+          ),
         ),
-        onPressed: () {},
+      ),
+      leading: IconButton(
+        icon: Icon(Icons.menu, color: Colors.black87),
+        onPressed: () {
+          _showMenuOptions(context);
+        },
       ),
       actions: [
         IconButton(
@@ -474,7 +519,7 @@ Widget build(BuildContext context) {
             _showChangeGoalDialog('Change Exercise Goal', 'Enter new exercise goal');
           },
         ),
-        SizedBox(width: 10), // Add spacing between icons
+        SizedBox(width: 10),
         IconButton(
           icon: Icon(Icons.track_changes),
           onPressed: () {
@@ -484,28 +529,187 @@ Widget build(BuildContext context) {
       ],
     ),
     body: Center(
-      child: _widgetOptions().elementAt(_selectedIndex),
+      child: _widgetOptions.elementAt(_selectedIndex),
     ),
     bottomNavigationBar: BottomNavigationBar(
       items: const <BottomNavigationBarItem>[
-        BottomNavigationBarItem(
-          icon: Icon(Icons.emoji_events),
-          label: 'Achievements',
-        ),
-        BottomNavigationBarItem(
-          icon: Icon(Icons.person),
-          label: 'Me',
-        ),
-        BottomNavigationBarItem(
-          icon: Icon(Icons.group),
-          label: 'Groups',
-        ),
+        BottomNavigationBarItem(icon: Icon(Icons.emoji_events), label: 'Achievements'),
+        BottomNavigationBarItem(icon: Icon(Icons.person), label: 'Me'),
+        BottomNavigationBarItem(icon: Icon(Icons.group), label: 'Groups'),
       ],
       currentIndex: _selectedIndex,
       selectedItemColor: Colors.green,
-      onTap: _onItemTapped,
+      onTap: (index) {
+        setState(() {
+          _selectedIndex = index;
+        });
+      },
     ),
   );
 }
 
+
+
+
+Widget _buildStepProgressBar() {
+  return Column(
+    children: [
+      Text(
+        'Steps Today',
+        style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+      ),
+      SizedBox(height: 8),
+      ScaleTransition(
+        scale: _animation,
+        child: StreamBuilder<int>(
+          stream: _stepCountController.stream,
+          builder: (context, snapshot) {
+            if (snapshot.connectionState == ConnectionState.waiting) {
+              return CircularProgressIndicator();
+            } else if (snapshot.hasError) {
+              return Text('Error: ${snapshot.error}');
+            } else if (!snapshot.hasData) {
+              return Text('No data');
+            } else {
+              final progress = snapshot.data! / goalSteps;
+              return Column(
+                children: [
+                  Container(
+                    width: 300,
+                    height: 20,
+                    decoration: BoxDecoration(
+                      borderRadius: BorderRadius.circular(10),
+                      color: Colors.grey[300],
+                    ),
+                    child: Stack(
+                      children: [
+                        ClipRRect(
+                          borderRadius: BorderRadius.circular(10),
+                          child: FractionallySizedBox(
+                            widthFactor: progress.clamp(0.0, 1.0),
+                            child: Container(
+                              decoration: BoxDecoration(
+                                borderRadius: BorderRadius.circular(10),
+                                color: Color.fromARGB(255, 33, 243, 114),
+                              ),
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  SizedBox(height: 8),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Icon(Icons.directions_walk, color: Colors.teal, size: 24),
+                      SizedBox(width: 8),
+                      Text(
+                        '${snapshot.data!} / $goalSteps',
+                        style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
+                      ),
+                      SizedBox(width: 8),
+                      Text(
+                        '(${(progress * 100).toStringAsFixed(1)}%)',
+                        style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.teal),
+                      ),
+                    ],
+                  ),
+                ],
+              );
+            }
+          },
+        ),
+      ),
+    ],
+  );
 }
+
+Widget _buildExerciseProgressBar() {
+  return Column(
+    children: [
+      Text(
+        'Active Calories Burnt Today',
+        style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+      ),
+      SizedBox(height: 8),
+      ScaleTransition(
+        scale: _animation,
+        child: StreamBuilder<int>(
+          stream: _exerciseCountController.stream,
+          builder: (context, snapshot) {
+            if (snapshot.connectionState == ConnectionState.waiting) {
+              return CircularProgressIndicator();
+            } else if (snapshot.hasError) {
+              return Text('Error: ${snapshot.error}');
+            } else if (!snapshot.hasData) {
+              return Text('No data');
+            } else {
+              final progress = snapshot.data! / goalExercise;
+              return Column(
+                children: [
+                  Container(
+                    width: 300,
+                    height: 20,
+                    decoration: BoxDecoration(
+                      borderRadius: BorderRadius.circular(10),
+                      color: Colors.grey[300],
+                    ),
+                    child: Stack(
+                      children: [
+                        ClipRRect(
+                          borderRadius: BorderRadius.circular(10),
+                          child: FractionallySizedBox(
+                            widthFactor: progress.clamp(0.0, 1.0),
+                            child: Container(
+                              decoration: BoxDecoration(
+                                borderRadius: BorderRadius.circular(10),
+                                color: Colors.red,
+                              ),
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  SizedBox(height: 8),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Icon(Icons.directions_run, color: Colors.blue, size: 24),
+                      SizedBox(width: 8),
+                      Text(
+                        '${snapshot.data!} / $goalExercise kcal',
+                        style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
+                      ),
+                      SizedBox(width: 8),
+                      Text(
+                        '(${(progress * 100).toStringAsFixed(1)}%)',
+                        style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.blue),
+                      ),
+                    ],
+                  ),
+                ],
+              );
+            }
+          },
+        ),
+      ),
+    ],
+  );
+}
+
+String _getUserFirstName() {
+  User? user = FirebaseAuth.instance.currentUser;
+
+  if (user != null && user.email != null) {
+    return user.email!.split('@')[0];
+  } else {
+    return 'User';
+  }
+}
+
+
+}
+
+

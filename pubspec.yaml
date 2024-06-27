@@ -23,6 +23,7 @@ dependencies:
   fl_chart: ^0.68.0
   permission_handler: ^11.3.1
   shared_preferences: ^2.2.3
+  carousel_slider: ^4.2.1
 
 
 dev_dependencies:
@@ -40,3 +41,4 @@ flutter:
     - assets/images/sunglasses.jpg
     - assets/images/character_sunglasses.png
     - assets/images/character_sunglasses.jpeg
+    - assets/images/c2.jpg

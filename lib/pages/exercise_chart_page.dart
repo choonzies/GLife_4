@@ -1,188 +1,291 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:fl_chart/fl_chart.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:firebase_auth/firebase_auth.dart';
+import 'package:health/health.dart';
 import 'package:intl/intl.dart';
 
-class ExerciseChartPage extends StatefulWidget {
+class ActiveEnergyChartPage extends StatefulWidget {
   @override
-  _ExerciseChartPageState createState() => _ExerciseChartPageState();
+  _ActiveEnergyChartPageState createState() => _ActiveEnergyChartPageState();
 }
 
-class _ExerciseChartPageState extends State<ExerciseChartPage> {
-  final FirebaseFirestore _firestore = FirebaseFirestore.instance;
-  final FirebaseAuth _auth = FirebaseAuth.instance;
-  List<BarChartGroupData> barGroups = [];
-  List<String> weekDays = [];
+class _ActiveEnergyChartPageState extends State<ActiveEnergyChartPage> {
+  PageController _pageController = PageController(initialPage: 0);
+  Map<int, List<BarChartGroupData>> cachedBarGroups = {};
+  Map<int, List<String>> cachedWeekDays = {};
+  int currentWeekIndex = 0;
+  bool isLoading = true;
+  int touchedIndex = 1;
 
   @override
   void initState() {
     super.initState();
-    fetchExerciseData();
+    fetchActiveEnergyData(currentWeekIndex);
   }
 
-  Future<void> fetchExerciseData() async {
-    var user = _auth.currentUser;
-    if (user == null) {
-      // Handle the case where user is not logged in
+  Future<void> fetchActiveEnergyData(int weekIndex) async {
+    var types = [
+      HealthDataType.ACTIVE_ENERGY_BURNED,
+    ];
+
+    bool permission = await Health().requestAuthorization(types);
+    if (!permission) {
+      debugPrint('Authorization not granted');
       return;
     }
 
     var now = DateTime.now();
-    var pastWeek = now.subtract(Duration(days: 6));
+    var pastWeek = now.subtract(Duration(days: 7 * weekIndex + 6));
     List<BarChartGroupData> tempBarGroups = [];
-    weekDays = [];
+    List<String> tempWeekDays = [];
 
     for (int i = 0; i <= 6; i++) {
       var day = pastWeek.add(Duration(days: i));
       var midnight = DateTime(day.year, day.month, day.day);
 
-      QuerySnapshot exerciseSnapshot = await _firestore
-          .collection('users')
-          .doc(user.uid)
-          .collection('days')
-          .doc(midnight.toIso8601String())
-          .collection('exercise')
-          .get();
+      try {
+        List<HealthDataPoint> healthData = await Health().getHealthDataFromTypes(
+          startTime: midnight,
+          endTime: midnight.add(Duration(days: 1)),
+          types: types,
+        );
 
-      int maxExercise = 0;
-      for (var doc in exerciseSnapshot.docs) {
-        var data = doc.data() as Map<String, dynamic>;
-        int exerciseMinutes = data['exercise_minutes'] as int;
-        if (exerciseMinutes > maxExercise) {
-          maxExercise = exerciseMinutes;
+        int totalActiveEnergy = 0;
+        int energy = 0;
+        for (HealthDataPoint dataPoint in healthData) {
+          energy = dataPoint.toJson()['value'].numericValue.toInt();
+          totalActiveEnergy += energy;
         }
-      }
-
-      tempBarGroups.add(
-        BarChartGroupData(
-          x: i,
-          barRods: [
-            BarChartRodData(
-              toY: maxExercise.toDouble(),
-              color: Colors.blueAccent,
-              width: 22,
-              borderRadius: BorderRadius.circular(6),
-              backDrawRodData: BackgroundBarChartRodData(
-                show: true,
-                toY: 100, // Assuming max exercise minutes to be 100 for background bar
-                color: Colors.grey[300],
+        tempBarGroups.add(
+          BarChartGroupData(
+            x: i,
+            barRods: [
+              BarChartRodData(
+                toY: totalActiveEnergy.toDouble(),
+                gradient: LinearGradient(
+                  colors: [Colors.orangeAccent, Colors.redAccent],
+                  begin: Alignment.bottomCenter,
+                  end: Alignment.topCenter,
+                ),
+                width: 22,
+                borderRadius: BorderRadius.circular(6),
+                backDrawRodData: BackgroundBarChartRodData(
+                  show: true,
+                  toY: 5000,
+                  color: Colors.grey[300],
+                ),
               ),
-            ),
-          ],
-        ),
-      );
-      weekDays.add(DateFormat.E().format(midnight));
+            ],
+          ),
+        );
+        tempWeekDays.add(DateFormat.E().format(midnight));
+      } catch (error) {
+        debugPrint('Error fetching health data: $error');
+      }
     }
 
     setState(() {
-      barGroups = tempBarGroups;
+      cachedBarGroups[weekIndex] = tempBarGroups;
+      cachedWeekDays[weekIndex] = tempWeekDays;
+      isLoading = false;
     });
   }
 
   @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: Text('Exercise Over Days'),
+Widget build(BuildContext context) {
+  return Scaffold(
+    appBar: AppBar(
+      title: Text('Steps Over Days'),
+    ),
+    body: Center(
+      child: isLoading
+          ? CircularProgressIndicator()
+          : Column(
+              children: [
+                Padding(
+  padding: const EdgeInsets.symmetric(horizontal: 24.0, vertical: 16.0),
+  child: Container(
+    decoration: BoxDecoration(
+      borderRadius: BorderRadius.circular(12),
+      color: Colors.blueAccent,
+      boxShadow: [
+        BoxShadow(
+          color: Colors.grey.withOpacity(0.5),
+          spreadRadius: 1,
+          blurRadius: 3,
+          offset: Offset(0, 2), // changes position of shadow
+        ),
+      ],
+    ),
+    padding: const EdgeInsets.all(16.0),
+    child: Text(
+      'You have burnt ${calculateTotalActiveEnergy()} kcal in the past 7 days!',
+      style: TextStyle(
+        fontSize: 18,
+        fontWeight: FontWeight.bold,
+        color: Colors.white,
+        fontFamily: 'Roboto', // Example of custom font family
       ),
-      body: Center(
-        child: barGroups.isEmpty
-            ? CircularProgressIndicator()
-            : Padding(
-                padding: const EdgeInsets.all(16.0),
-                child: BarChart(
-                  BarChartData(
-                    alignment: BarChartAlignment.spaceAround,
-                    barGroups: barGroups,
-                    titlesData: FlTitlesData(
-                      leftTitles: AxisTitles(
-                        sideTitles: SideTitles(
-                          showTitles: true,
-                          reservedSize: 42,
-                          getTitlesWidget: (value, meta) {
-                            if (value % 20 == 0) {
-                              return Text(
-                                '${value.toInt()}',
-                                style: const TextStyle(
-                                  color: Color(0xff67727d),
-                                  fontWeight: FontWeight.bold,
-                                  fontSize: 12,
-                                ),
-                              );
-                            }
-                            return Container();
-                          },
-                        ),
-                      ),
-                      bottomTitles: AxisTitles(
-                        sideTitles: SideTitles(
-                          showTitles: true,
-                          getTitlesWidget: (value, meta) {
-                            return Padding(
-                              padding: const EdgeInsets.only(top: 8.0),
-                              child: Text(
-                                weekDays[value.toInt()],
-                                style: const TextStyle(
-                                  color: Color(0xff68737d),
-                                  fontWeight: FontWeight.bold,
-                                  fontSize: 12,
+    ),
+  ),
+)
+,
+                Expanded(
+                  child: PageView.builder(
+                    controller: _pageController,
+                    onPageChanged: (index) async {
+                      setState(() {
+                        isLoading = false;
+                      });
+                      await fetchActiveEnergyData(index);
+                      setState(() {
+                        currentWeekIndex = index;
+                        isLoading = false;
+                      });
+                    },
+                    itemBuilder: (context, index) {
+                      if (!cachedBarGroups.containsKey(index) ||
+                          !cachedWeekDays.containsKey(index)) {
+                        return Center(child: CircularProgressIndicator());
+                      }
+
+                      // Calculate max value for dynamic y-axis
+                      double maxY = 0;
+                      for (var group in cachedBarGroups[index]!) {
+                        for (var rod in group.barRods) {
+                          if (rod.toY > maxY) {
+                            maxY = rod.toY;
+                          }
+                        }
+                      }
+                      maxY = (maxY / 1000).ceil() * 1000;
+
+                      return Padding(
+                        padding: const EdgeInsets.all(16.0),
+                        child: BarChart(
+                          BarChartData(
+                            maxY: maxY,
+                            alignment: BarChartAlignment.spaceAround,
+                            barGroups: cachedBarGroups[index]!,
+                            titlesData: FlTitlesData(
+                              leftTitles: AxisTitles(
+                                sideTitles: SideTitles(
+                                  showTitles: true,
+                                  reservedSize: 42,
+                                  getTitlesWidget: (value, meta) {
+                                    if (value % 200 == 0) {
+                                      return Text(
+                                        '${value.toInt()}',
+                                        style: const TextStyle(
+                                          color: Color(0xff67727d),
+                                          fontWeight: FontWeight.bold,
+                                          fontSize: 12,
+                                        ),
+                                      );
+                                    }
+                                    return Container();
+                                  },
                                 ),
                               ),
-                            );
-                          },
-                        ),
-                      ),
-                      topTitles: AxisTitles(
-                        sideTitles: SideTitles(showTitles: false),
-                      ),
-                      rightTitles: AxisTitles(
-                        sideTitles: SideTitles(showTitles: false),
-                      ),
-                    ),
-                    gridData: FlGridData(
-                      show: true,
-                      drawHorizontalLine: true,
-                      drawVerticalLine: false,
-                      horizontalInterval: 20,
-                      getDrawingHorizontalLine: (value) {
-                        return FlLine(
-                          color: Color(0xffe7e8ec),
-                          strokeWidth: 1,
-                        );
-                      },
-                    ),
-                    borderData: FlBorderData(
-                      show: false,
-                    ),
-                    barTouchData: BarTouchData(
-                      touchTooltipData: BarTouchTooltipData(
-                        getTooltipItem: (group, groupIndex, rod, rodIndex) {
-                          return BarTooltipItem(
-                            '${weekDays[group.x.toInt()]}\n',
-                            TextStyle(
-                              color: Colors.white,
-                              fontWeight: FontWeight.bold,
-                              fontSize: 14,
+                              bottomTitles: AxisTitles(
+                                sideTitles: SideTitles(
+                                  showTitles: true,
+                                  getTitlesWidget: (value, meta) {
+                                    return Padding(
+                                      padding: const EdgeInsets.only(top: 8.0),
+                                      child: Text(
+                                        cachedWeekDays[index]![value.toInt()],
+                                        style: TextStyle(
+                                          color: Color(0xff68737d),
+                                          fontWeight: FontWeight.bold,
+                                          fontSize: 12,
+                                        ),
+                                      ),
+                                    );
+                                  },
+                                ),
+                              ),
+                              topTitles: AxisTitles(
+                                sideTitles: SideTitles(showTitles: false),
+                              ),
+                              rightTitles: AxisTitles(
+                                sideTitles: SideTitles(showTitles: false),
+                              ),
                             ),
-                            children: <TextSpan>[
-                              TextSpan(
-                                text: '${rod.toY.toInt()} minutes',
-                                style: TextStyle(
-                                  color: Colors.white,
-                                  fontSize: 12,
-                                  fontWeight: FontWeight.w500,
-                                ),
+                            gridData: FlGridData(
+                              show: false,
+                              drawHorizontalLine: true,
+                              drawVerticalLine: false,
+                              horizontalInterval: 200,
+                              getDrawingHorizontalLine: (value) {
+                                return FlLine(
+                                  color: Color(0xffe7e8ec),
+                                  strokeWidth: 1,
+                                );
+                              },
+                            ),
+                            borderData: FlBorderData(
+                              show: false,
+                            ),
+                            barTouchData: BarTouchData(
+                              touchTooltipData: BarTouchTooltipData(
+                                getTooltipItem:
+                                    (group, groupIndex, rod, rodIndex) {
+                                  return BarTooltipItem(
+                                    '${cachedWeekDays[index]![group.x.toInt()]}\n',
+                                    TextStyle(
+                                      color: Colors.white,
+                                      fontWeight: FontWeight.bold,
+                                      fontSize: 14,
+                                    ),
+                                    children: <TextSpan>[
+                                      TextSpan(
+                                        text: '${rod.toY.toInt()} steps',
+                                        style: TextStyle(
+                                          color: Colors.white,
+                                          fontSize: 12,
+                                          fontWeight: FontWeight.w500,
+                                        ),
+                                      ),
+                                    ],
+                                  );
+                                },
                               ),
-                            ],
-                          );
-                        },
-                      ),
-                    ),
+                              touchCallback:
+                                  (FlTouchEvent event, barTouchResponse) {
+                                setState(() {
+                                  if (!event.isInterestedForInteractions ||
+                                      barTouchResponse == null ||
+                                      barTouchResponse.spot == null) {
+                                    touchedIndex = -1;
+                                    return;
+                                  }
+                                  touchedIndex = barTouchResponse
+                                      .spot!.touchedBarGroupIndex;
+                                });
+                              },
+                            ),
+                          ),
+                        ),
+                      );
+                    },
                   ),
                 ),
-              ),
-      ),
-    );
+              ],
+            ),
+    ),
+  );
+}
+
+  String calculateTotalActiveEnergy() {
+    if (cachedBarGroups.containsKey(currentWeekIndex)) {
+      int totalActiveEnergy = 0;
+      for (var group in cachedBarGroups[currentWeekIndex]!) {
+        totalActiveEnergy += group.barRods[0].toY.toInt();
+      }
+      return totalActiveEnergy.toString();
+    }
+    return '0';
   }
 }
