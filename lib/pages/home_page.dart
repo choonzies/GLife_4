@@ -1,8 +1,13 @@
+import 'dart:ui';
+
 import 'package:flutter/material.dart';
+import 'package:flutter/widgets.dart';
 import 'package:glife/auth.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:glife/pages/accessories.dart';
+import 'package:glife/pages/achievements.dart';
+import 'package:glife/pages/groups.dart';
 import 'package:glife/pages/profile.dart';
 import 'package:health/health.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -11,7 +16,7 @@ import 'steps_chart_page.dart';
 import 'exercise_chart_page.dart';
 import 'package:carousel_slider/carousel_slider.dart';
 
-  int goalSteps = 1000;
+
 class HomePage extends StatefulWidget {
   const HomePage({Key? key}) : super(key: key);
 
@@ -20,11 +25,19 @@ class HomePage extends StatefulWidget {
 }
 
 class _HomePageState extends State<HomePage> with SingleTickerProviderStateMixin {
-  late int _selectedIndex;
+
+late int _selectedIndex;
   late User? user;
   int noSteps = 0; // Variable to hold today's step count
   int noExercise = 0; // Variable to hold today's exercise count
   final TextEditingController _textController = TextEditingController();
+
+  // Define state variables for character's gear image URLs
+  String _baseImageUrl = 'assets/images/c2.jpg'; // Example initial image
+  String _selectedHat = ''; // Initialize with empty string or default image URL
+  String _chestImageUrl = ''; // Initialize with empty string or default image URL
+  String _bootsImageUrl = ''; // Initialize with empty string or default image URL
+
 
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
   late AnimationController _controller;
@@ -42,7 +55,7 @@ class _HomePageState extends State<HomePage> with SingleTickerProviderStateMixin
     _selectedIndex = 1;
     user = Auth().currentUser;
     _checkAndRequestHealthAccess();
-
+  _loadGearUrls();
     // Initialize animation controller and animation
     _controller = AnimationController(
       vsync: this,
@@ -367,7 +380,7 @@ void _showChangeBedtimeDialog(BuildContext context) async {
  @override
 Widget build(BuildContext context) {
   List<Widget> _widgetOptions = <Widget>[
-    Center(child: Text('Achievements')),
+    Center(child: Text('')),
     SingleChildScrollView(
       padding: EdgeInsets.symmetric(horizontal: 20, vertical: 20),
       child: Column(
@@ -382,32 +395,70 @@ Widget build(BuildContext context) {
           SizedBox(height: 10),
           // Larger character image below the welcome message
           GestureDetector(
-            onTap: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(builder: (context) => AccessoriesPage()),
-              );
-            },
-            child: Container(
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.grey.withOpacity(0.5),
-                    spreadRadius: 5,
-                    blurRadius: 7,
-                    offset: Offset(0, 3), // changes position of shadow
-                  ),
-                ],
-              ),
-              child: Image.asset(
-                'assets/images/c2.jpg',
-                width: 300,
-                height: 400,
-                fit: BoxFit.contain, // Ensure the entire image is visible without cropping
-              ),
-            ),
+  onTap: () {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => AccessoriesPage(
+          onUpdateCharacter: _updateCharacter,
+        ),
+      ),
+    );
+  },
+  child: Container(
+    decoration: BoxDecoration(
+      shape: BoxShape.circle,
+      boxShadow: [
+        BoxShadow(
+          color: Colors.grey.withOpacity(0.5),
+          spreadRadius: 5,
+          blurRadius: 7,
+          offset: Offset(0, 3), // changes position of shadow
+        ),
+      ],
+    ),
+    child: Stack(
+      children: [
+        Image.asset(
+          _baseImageUrl, // Base image
+          width: 300,
+          height: 400,
+          fit: BoxFit.contain,
+        ),
+        if (_selectedHat.isNotEmpty)
+         Positioned( 
+          top: -80,
+          left: -50,
+          child: Image.asset(
+            _selectedHat,
+            width: 400,
+            height: 400,
+            fit: BoxFit.contain,
+          )),
+        if (_chestImageUrl.isNotEmpty)
+          Positioned(
+            top: -100,
+            left: -145,
+            child:
+           Image.asset( _chestImageUrl,
+            width: 600,
+            height: 500,
+            fit: BoxFit.contain,)
           ),
+        if (_bootsImageUrl.isNotEmpty)
+          Image.asset(
+            _bootsImageUrl,
+            width: 300,
+            height: 400,
+            fit: BoxFit.contain,
+          ),
+      ],
+    ),
+  ),
+),
+
+
+
 
           SizedBox(height: 20),
           GestureDetector(
@@ -531,20 +582,38 @@ Widget build(BuildContext context) {
     body: Center(
       child: _widgetOptions.elementAt(_selectedIndex),
     ),
-    bottomNavigationBar: BottomNavigationBar(
-      items: const <BottomNavigationBarItem>[
-        BottomNavigationBarItem(icon: Icon(Icons.emoji_events), label: 'Achievements'),
-        BottomNavigationBarItem(icon: Icon(Icons.person), label: 'Me'),
-        BottomNavigationBarItem(icon: Icon(Icons.group), label: 'Groups'),
-      ],
-      currentIndex: _selectedIndex,
-      selectedItemColor: Colors.green,
-      onTap: (index) {
-        setState(() {
-          _selectedIndex = index;
-        });
-      },
-    ),
+    bottomNavigationBar: // home_page.dart
+
+BottomNavigationBar(
+  items: const <BottomNavigationBarItem>[
+    BottomNavigationBarItem(icon: Icon(Icons.emoji_events), label: 'Achievements'),
+    BottomNavigationBarItem(icon: Icon(Icons.person), label: 'Me'),
+    BottomNavigationBarItem(icon: Icon(Icons.group), label: 'Groups'),
+  ],
+  currentIndex: _selectedIndex,
+  selectedItemColor: Colors.green,
+  onTap: (index) {
+    setState(() {
+      _selectedIndex = index;
+    });
+
+    // Handle navigation to AchievementsPage
+    if (index == 0) { // Assuming 0 is the index of the Achievements tab
+      Navigator.push(
+        context,
+        MaterialPageRoute(builder: (context) => AchievementsPage()),
+      );
+    }
+
+    if (index == 2) { // Assuming 0 is the index of the Achievements tab
+      Navigator.push(
+        context,
+        MaterialPageRoute(builder: (context) => Friends()),
+      );
+    }
+  },
+)
+,
   );
 }
 
@@ -708,8 +777,42 @@ String _getUserFirstName() {
     return 'User';
   }
 }
+void _updateCharacter(Map<String, String> gearUrls) {
+  setState(() {
+    _baseImageUrl = gearUrls['baseImageUrl'] ?? _baseImageUrl;
+    _selectedHat = gearUrls['Hat'] ?? _selectedHat;
+    _chestImageUrl = gearUrls['Chest'] ?? _chestImageUrl;
+    _bootsImageUrl = gearUrls['bootsImageUrl'] ?? _bootsImageUrl;
+  });
+  _saveGearUrls(); // Save the updated gear URLs
+}
+
+
+
+Future<void> _saveGearUrls() async {
+  SharedPreferences prefs = await SharedPreferences.getInstance();
+  await prefs.setString('baseImageUrl', _baseImageUrl);
+  await prefs.setString('selectedHat', _selectedHat);
+  await prefs.setString('chestImageUrl', _chestImageUrl);
+  await prefs.setString('bootsImageUrl', _bootsImageUrl);
+}
+
+Future<void> _loadGearUrls() async {
+  SharedPreferences prefs = await SharedPreferences.getInstance();
+  setState(() {
+    _baseImageUrl = prefs.getString('baseImageUrl') ?? 'assets/images/c2.jpg';
+    _selectedHat = prefs.getString('selectedHat') ?? '';
+    _chestImageUrl = prefs.getString('chestImageUrl') ?? '';
+    _bootsImageUrl = prefs.getString('bootsImageUrl') ?? '';
+  });
+}
 
 
 }
+
+
+
+
+
 
 
