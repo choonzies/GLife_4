@@ -46,7 +46,7 @@ class AchievementsPage extends StatelessWidget {
     return Scaffold(
       appBar: AppBar(
         title: Text('Achievements'),
-        backgroundColor: Colors.blue,
+        backgroundColor: Colors.white,
       ),
       body: Padding(
         padding: const EdgeInsets.all(8.0),

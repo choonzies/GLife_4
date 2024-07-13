@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:glife/auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:health/health.dart';
 
 class LoginPage extends StatefulWidget {
   const LoginPage({Key? key}) : super(key: key);
@@ -18,20 +17,28 @@ class _LoginPageState extends State<LoginPage> {
 
   final TextEditingController _controllerEmail = TextEditingController();
   final TextEditingController _controllerPassword = TextEditingController();
+  final TextEditingController _controllerUsername = TextEditingController();
 
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
 
   Future<void> checkFirstLogin(String userId) async {
     DocumentSnapshot userDoc = await _firestore.collection('users').doc(userId).get();
     if (!userDoc.exists) {
-      // Store user email
+      // Store user email and username
       await _firestore.collection('users').doc(userId).set({
-        'email': _controllerEmail.text,       
+        'email': _controllerEmail.text,
+        'username': _controllerUsername.text,
       });
     }
   }
 
-
+  Future<bool> isUsernameTaken(String username) async {
+    QuerySnapshot result = await _firestore
+        .collection('users')
+        .where('username', isEqualTo: username)
+        .get();
+    return result.docs.isNotEmpty;
+  }
 
   Future<void> signInWithEmailAndPassword() async {
     try {
@@ -54,6 +61,15 @@ class _LoginPageState extends State<LoginPage> {
 
   Future<void> createUserWithEmailAndPassword() async {
     try {
+      // Check if the username is taken
+      bool usernameTaken = await isUsernameTaken(_controllerUsername.text);
+      if (usernameTaken) {
+        setState(() {
+          errorMessage = 'Username is already taken';
+        });
+        return;
+      }
+
       UserCredential userCredential = await Auth().createUserWithEmailAndPassword(
         email: _controllerEmail.text,
         password: _controllerPassword.text,
@@ -143,6 +159,8 @@ class _LoginPageState extends State<LoginPage> {
               _entryField('Email', _controllerEmail, false),
               const SizedBox(height: 20),
               _entryField('Password', _controllerPassword, true),
+              const SizedBox(height: 20),
+              if (!isLogin) _entryField('Username', _controllerUsername, false),
               const SizedBox(height: 20),
               _errorMessage(),
               const SizedBox(height: 20),

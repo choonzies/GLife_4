@@ -1,3 +1,4 @@
+import 'dart:ffi';
 import 'dart:ui';
 
 import 'package:flutter/material.dart';
@@ -7,7 +8,8 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:glife/pages/accessories.dart';
 import 'package:glife/pages/achievements.dart';
-import 'package:glife/pages/groups.dart';
+import 'package:glife/pages/store.dart';
+import 'package:glife/pages/friends.dart';
 import 'package:glife/pages/profile.dart';
 import 'package:health/health.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -47,7 +49,8 @@ late int _selectedIndex;
   late StreamController<int> _stepCountController;
   late StreamController<int> _exerciseCountController;
   int streak = 0;
-  int _lastCheckedDate = 0;
+  String lastCheckedDate = '';
+  int coins = 0;
 
   
 
@@ -59,7 +62,14 @@ late int _selectedIndex;
     _selectedIndex = 1;
     user = Auth().currentUser;
     _checkAndRequestHealthAccess();
-  _loadGearUrls();
+    _loadGearUrls();
+    _loadGoals();
+     loadStreak();
+     _loadCoins();
+
+     
+
+
     // Initialize animation controller and animation
     _controller = AnimationController(
       vsync: this,
@@ -75,18 +85,23 @@ late int _selectedIndex;
     _stepCountController = StreamController<int>.broadcast();
     _exerciseCountController = StreamController<int>.broadcast();
 
-    // Load saved goals
-    _loadGoals();
 
     // Set up the step count stream
     Timer.periodic(Duration(seconds: 10), (timer) => fetchStepData());
 
     // Set up the exercise count stream
     Timer.periodic(Duration(seconds: 10), (timer) => fetchActiveEnergyData());
+    _printSharedPreferencesValues();
+
+    
+   
   }
 
+
+
+
   @override
-  void dispose() {
+void dispose() {
     // Cancel stream subscriptions
     _stepCountController.close();
     _exerciseCountController.close();
@@ -94,6 +109,25 @@ late int _selectedIndex;
     _controller.dispose();
     super.dispose();
   }
+
+
+
+
+void _printSharedPreferencesValues() async {
+  final prefs = await SharedPreferences.getInstance();
+  Set<String> keys = prefs.getKeys();
+  Map<String, dynamic> values = {};
+  for (String key in keys) {
+    values[key] = prefs.get(key);
+  }
+  print('SharedPreferences values: $values');
+
+}
+
+
+
+
+
 
   Future<void> _checkAndRequestHealthAccess() async {
     var types = [HealthDataType.STEPS, HealthDataType.EXERCISE_TIME];
@@ -192,46 +226,6 @@ Future<int> fetchActiveEnergyData() async {
 
 
 
-
-
-
-Future<void> logDailyActiveCalories(String userId, int activeCalories) async {
-  var now = DateTime.now();
-  var midnight = DateTime(now.year, now.month, now.day);
-
-  await _firestore.collection('users').doc(userId)
-      .collection('days').doc(midnight.toIso8601String())
-      .collection('active_calories').add({
-    'active_calories': activeCalories,
-    'timestamp': now,
-  });
-}
-
-
-  Future<void> logDailySteps(String userId, int steps) async {
-    var now = DateTime.now();
-    var midnight = DateTime(now.year, now.month, now.day);
-
-    await _firestore.collection('users').doc(userId)
-        .collection('days').doc(midnight.toIso8601String())
-        .collection('steps').add({
-      'steps': steps,
-      'timestamp': now,
-    });
-  }
-
-  Future<void> logDailyExercise(String userId, int exercise) async {
-    var now = DateTime.now();
-    var midnight = DateTime(now.year, now.month, now.day);
-
-    await _firestore.collection('users').doc(userId)
-        .collection('days').doc(midnight.toIso8601String())
-        .collection('exercise').add({
-      'exercise_minutes': exercise,
-      'timestamp': now,
-    });
-  }
-
   Future<void> _loadGoals() async {
     SharedPreferences prefs = await SharedPreferences.getInstance();
     setState(() {
@@ -239,6 +233,17 @@ Future<void> logDailyActiveCalories(String userId, int activeCalories) async {
       goalExercise = prefs.getInt('goalExercise') ?? 30;
     });
   }
+
+  Future<void> _loadCoins() async {
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+    setState(() {
+      coins = prefs.getInt('coins') ?? 0;
+      
+    });
+  }
+
+
+
 
   Future<void> _saveGoals() async {
     SharedPreferences prefs = await SharedPreferences.getInstance();
@@ -383,269 +388,353 @@ void _showChangeBedtimeDialog(BuildContext context) async {
 }
 
 
-
-
-
- @override
- @override
 @override
 Widget build(BuildContext context) {
-  List<Widget> _widgetOptions = <Widget>[
-    Center(child: Text('')),
-    Stack(
-      children: [
-        SingleChildScrollView(
-          padding: EdgeInsets.symmetric(horizontal: 20, vertical: 20),
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.start,
-            crossAxisAlignment: CrossAxisAlignment.center,
-            children: [
-              SizedBox(height: 20),
-              Text(
-                "Welcome back, ${_getUserFirstName()}!",
-                style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
-              ),
-              SizedBox(height: 10),
-              // Larger character image below the welcome message
-              GestureDetector(
-                onTap: () {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (context) => AccessoriesPage(
-                        onUpdateCharacter: _updateCharacter,
+    List<Widget> _widgetOptions = <Widget>[
+      AchievementsPage(),
+      Stack(
+        children: [
+          SingleChildScrollView(
+            padding: EdgeInsets.symmetric(horizontal: 20, vertical: 20),
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.start,
+              crossAxisAlignment: CrossAxisAlignment.center,
+              children: [
+                SizedBox(height: 0),
+                ShaderMask(
+  shaderCallback: (bounds) => LinearGradient(
+    colors: [Colors.blue, Colors.green],
+    tileMode: TileMode.mirror,
+  ).createShader(bounds),
+  child: FutureBuilder<String?>(
+    future: getUsername(), // Assuming _getUsername() fetches the username asynchronously
+    builder: (context, snapshot) {
+        if (snapshot.hasError) {
+        return Text('Error: ${snapshot.error}'); // Placeholder for error state
+      } else {
+        String username = snapshot.data ?? 'User'; // Default to 'User' if username is null
+        return Text(
+          "Welcome back, $username!",
+          style: TextStyle(
+            fontSize: 28,
+            fontWeight: FontWeight.bold,
+            color: Colors.black,
+            
+          ),
+        );
+      }
+    },
+  ),
+)
+,
+                SizedBox(height: 10),
+                // Larger character image below the welcome message
+                GestureDetector(
+                  onTap: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => AccessoriesPage(
+                          onUpdateCharacter: _updateCharacter,
+                        ),
                       ),
+                    );
+                  },
+                  child: Container(
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.grey.withOpacity(0.5),
+                          spreadRadius: 5,
+                          blurRadius: 7,
+                          offset: Offset(0, 3), // changes position of shadow
+                        ),
+                      ],
                     ),
-                  );
-                },
-                child: Container(
-                  decoration: BoxDecoration(
-                    shape: BoxShape.circle,
-                    boxShadow: [
-                      BoxShadow(
-                        color: Colors.grey.withOpacity(0.5),
-                        spreadRadius: 5,
-                        blurRadius: 7,
-                        offset: Offset(0, 3), // changes position of shadow
-                      ),
-                    ],
-                  ),
-                  child: Stack(
-                    children: [
-                      Image.asset(
-                        _baseImageUrl, // Base image
-                        width: 300,
-                        height: 400,
-                        fit: BoxFit.contain,
-                      ),
-                      if (_selectedHat.isNotEmpty)
-                        Positioned(
-                          top: -80,
-                          left: -50,
-                          child: Image.asset(
-                            _selectedHat,
-                            width: 400,
-                            height: 400,
-                            fit: BoxFit.contain,
-                          ),
-                        ),
-                      if (_chestImageUrl.isNotEmpty)
-                        Positioned(
-                          top: -100,
-                          left: -145,
-                          child: Image.asset(
-                            _chestImageUrl,
-                            width: 600,
-                            height: 500,
-                            fit: BoxFit.contain,
-                          ),
-                        ),
-                      if (_bootsImageUrl.isNotEmpty)
+                    child: Stack(
+                      children: [
                         Image.asset(
-                          _bootsImageUrl,
+                          _baseImageUrl, // Base image
                           width: 300,
                           height: 400,
                           fit: BoxFit.contain,
                         ),
-                    ],
+                        if (_selectedHat.isNotEmpty)
+                          Positioned(
+                            top: -80,
+                            left: -50,
+                            child: Image.asset(
+                              _selectedHat,
+                              width: 400,
+                              height: 400,
+                              fit: BoxFit.contain,
+                            ),
+                          ),
+                        if (_chestImageUrl.isNotEmpty)
+                          Positioned(
+                            top: -100,
+                            left: -145,
+                            child: Image.asset(
+                              _chestImageUrl,
+                              width: 600,
+                              height: 500,
+                              fit: BoxFit.contain,
+                            ),
+                          ),
+                        if (_bootsImageUrl.isNotEmpty)
+                          Image.asset(
+                            _bootsImageUrl,
+                            width: 300,
+                            height: 400,
+                            fit: BoxFit.contain,
+                          ),
+                      ],
+                    ),
                   ),
                 ),
-              ),
-              SizedBox(height: 20),
-              GestureDetector(
-                onTap: () {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(builder: (context) => StepsChartPage()),
-                  );
-                },
-                child: Card(
+                SizedBox(height: 20),
+                GestureDetector(
+                  onTap: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(builder: (context) => StepsChartPage()),
+                    );
+                  },
+                  child: Card(
+                    elevation: 5,
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                    child: Padding(
+                      padding: const EdgeInsets.all(16.0),
+                      child: _buildStepProgressBar(),
+                    ),
+                  ),
+                ),
+                GestureDetector(
+                  onTap: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(builder: (context) => ActiveEnergyChartPage()),
+                    );
+                  },
+                  child: Card(
+                    elevation: 5,
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                    child: Padding(
+                      padding: const EdgeInsets.all(16.0),
+                      child: _buildExerciseProgressBar(),
+                    ),
+                  ),
+                ),
+                SizedBox(height: 20),
+                Card(
                   elevation: 5,
                   shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
                   child: Padding(
                     padding: const EdgeInsets.all(16.0),
-                    child: _buildStepProgressBar(),
+                    child: Column(
+                      children: [
+                        FutureBuilder<String>(
+                          future: getBedtime(),
+                          builder: (context, snapshot) {
+                            if (snapshot.hasData) {
+                              return Text(
+                                snapshot.data!,
+                                style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
+                              );
+                            } else {
+                              return Text(
+                                'Error fetching bedtime',
+                                style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
+                              );
+                            }
+                          },
+                        ),
+                        SizedBox(height: 16),
+                        ElevatedButton(
+                          onPressed: () {
+                            _showChangeBedtimeDialog(context);
+                          },
+                          child: Text('Change Bedtime'),
+                        ),
+                      ],
+                    ),
                   ),
                 ),
-              ),
-              GestureDetector(
-                onTap: () {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(builder: (context) => ActiveEnergyChartPage()),
-                  );
-                },
-                child: Card(
-                  elevation: 5,
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-                  child: Padding(
-                    padding: const EdgeInsets.all(16.0),
-                    child: _buildExerciseProgressBar(),
-                  ),
+                SizedBox(height: 40),
+                ElevatedButton(
+                  onPressed: () async {
+                    await Auth().signOut();
+                  },
+                  child: Text('Sign Out'),
                 ),
-              ),
-              SizedBox(height: 20),
-              Card(
-                elevation: 5,
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-                child: Padding(
-                  padding: const EdgeInsets.all(16.0),
-                  child: Column(
-                    children: [
-                      FutureBuilder<String>(
-                        future: getBedtime(),
-                        builder: (context, snapshot) {
-                          if (snapshot.hasData) {
-                            return Text(
-                              snapshot.data!,
-                              style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
-                            );
-                          } else {
-                            return Text(
-                              'Error fetching bedtime',
-                              style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
-                            );
-                          }
-                        },
-                      ),
-                      SizedBox(height: 16),
-                      ElevatedButton(
-                        onPressed: () {
-                          _showChangeBedtimeDialog(context);
-                        },
-                        child: Text('Change Bedtime'),
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-              SizedBox(height: 40),
-              ElevatedButton(
-                onPressed: () async {
-                  await Auth().signOut();
-                },
-                child: Text('Sign Out'),
+              ],
+            ),
+          ),
+          Positioned(
+  right: 10,
+  top: 10,
+  child: Builder(
+    builder: (context) {
+      _checkGoalsCompletion();
+
+      return Container(
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            colors: [Colors.amberAccent, Colors.orangeAccent],
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+          ),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(0.3),
+              spreadRadius: 2,
+              blurRadius: 4,
+              offset: Offset(0, 2),
+            ),
+          ],
+          borderRadius: BorderRadius.circular(10),
+        ),
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 0.0, vertical: 3.0),
+          child: Row(
+            children: [
+              Icon(Icons.local_fire_department, color: Colors.white, size: 24),
+              SizedBox(width: 8),
+              Text(
+                '${streak} Day Streak!',
+                style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: Colors.white),
               ),
             ],
           ),
         ),
-        Positioned(
-          right: 10,
-          top: 10,
-          child: Builder(
-            builder: (context) {
-              _checkGoalsCompletion(); // Call the function directly
+      );
+    },
+  ),
+),
+Positioned(
+  right: 10,
+  top: 60,
+  child: Builder(
+    builder: (context) {
+      _loadCoins();
+      gainCoins();
 
-              return Card(
-                elevation: 3,
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(5)),
-                color: Colors.amberAccent.withOpacity(0.8),
-                child: Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 8.0, vertical: 4.0),
-                  child: Text(
-                    '${streak} Day Streak!',
-                    style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: Colors.black),
-                  ),
-                ),
-              );
+      return GestureDetector(
+  onTap: () {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => StorePage(
+          onItemsPurchased: _loadGearUrls,
+        ),
+      ),
+    ).then((_) => setState(() {}));
+  },
+  child: Container(
+    decoration: BoxDecoration(
+      color: const Color.fromARGB(255, 6, 171, 91),
+      boxShadow: [
+        BoxShadow(
+          color: Colors.black.withOpacity(0.3),
+          spreadRadius: 2,
+          blurRadius: 4,
+          offset: Offset(0, 2),
+        ),
+      ],
+      borderRadius: BorderRadius.circular(10),
+    ),
+    child: Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 12.0, vertical: 3.0),
+      child: Row(
+        children: [
+          Icon(Icons.store, color: Colors.white, size: 24),
+          SizedBox(width: 8),
+          Text(
+            '$coins Coins',
+            style: TextStyle(
+              fontSize: 14, 
+              fontWeight: FontWeight.bold, 
+              color: Colors.white,
+            ),
+          ),
+        ],
+      ),
+    ),
+  ),
+);
+
+    },
+  ),
+),
+
+        ],
+      ),
+      
+      Friends(),
+      
+    ];
+
+    return Scaffold(
+      appBar: AppBar(
+        title: Text('GLife'),
+        backgroundColor: Colors.green,
+        elevation: 0,
+        flexibleSpace: Container(
+          decoration: BoxDecoration(
+            gradient: LinearGradient(
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+              colors: <Color>[Colors.green, Colors.blue],
+            ),
+          ),
+        ),
+        leading: IconButton(
+          icon: Icon(Icons.menu, color: Colors.black87),
+          onPressed: () {
+            _showMenuOptions(context);
+          },
+        ),
+        actions: [
+          IconButton(
+            icon: Icon(Icons.directions_run),
+            onPressed: () {
+              _showChangeGoalDialog('Change Exercise Goal', 'Enter new exercise goal');
             },
           ),
-        ),
-      ],
-    ),
-    Center(child: Text('Groups')),
-  ];
-
-  return Scaffold(
-    appBar: AppBar(
-      title: Text('GLife'),
-      backgroundColor: Colors.green,
-      elevation: 0,
-      flexibleSpace: Container(
-        decoration: BoxDecoration(
-          gradient: LinearGradient(
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-            colors: <Color>[Colors.green, Colors.blue],
+          SizedBox(width: 10),
+          IconButton(
+            icon: Icon(Icons.track_changes),
+            onPressed: () {
+              _showChangeGoalDialog('Change Steps Goal', 'Enter new steps goal');
+            },
           ),
-        ),
+        ],
       ),
-      leading: IconButton(
-        icon: Icon(Icons.menu, color: Colors.black87),
-        onPressed: () {
-          _showMenuOptions(context);
+      body: Center(
+        child: _widgetOptions.elementAt(_selectedIndex),
+      ),
+      bottomNavigationBar: BottomNavigationBar(
+        items: const <BottomNavigationBarItem>[
+          BottomNavigationBarItem(icon: Icon(Icons.emoji_events), label: 'Achievements'),
+          BottomNavigationBarItem(icon: Icon(Icons.person), label: 'Me'),
+          BottomNavigationBarItem(icon: Icon(Icons.group), label: 'Friends'),
+        ],
+        currentIndex: _selectedIndex,
+        selectedItemColor: Colors.green,
+        onTap: (index) {
+          setState(() {
+            _selectedIndex = index;
+          });
+
+          // Handle navigation to AchievementsPage
+          
+
+          
         },
       ),
-      actions: [
-        IconButton(
-          icon: Icon(Icons.directions_run),
-          onPressed: () {
-            _showChangeGoalDialog('Change Exercise Goal', 'Enter new exercise goal');
-          },
-        ),
-        SizedBox(width: 10),
-        IconButton(
-          icon: Icon(Icons.track_changes),
-          onPressed: () {
-            _showChangeGoalDialog('Change Steps Goal', 'Enter new steps goal');
-          },
-        ),
-      ],
-    ),
-    body: Center(
-      child: _widgetOptions.elementAt(_selectedIndex),
-    ),
-    bottomNavigationBar: BottomNavigationBar(
-      items: const <BottomNavigationBarItem>[
-        BottomNavigationBarItem(icon: Icon(Icons.emoji_events), label: 'Achievements'),
-        BottomNavigationBarItem(icon: Icon(Icons.person), label: 'Me'),
-        BottomNavigationBarItem(icon: Icon(Icons.group), label: 'Groups'),
-      ],
-      currentIndex: _selectedIndex,
-      selectedItemColor: Colors.green,
-      onTap: (index) {
-        setState(() {
-          _selectedIndex = index;
-        });
-
-        // Handle navigation to AchievementsPage
-        if (index == 0) {
-          Navigator.push(
-            context,
-            MaterialPageRoute(builder: (context) => AchievementsPage()),
-          );
-        }
-
-        if (index == 2) {
-          Navigator.push(
-            context,
-            MaterialPageRoute(builder: (context) => Friends()),
-          );
-        }
-      },
-    ),
-  );
-}
+    );
+  }
 
 
 
@@ -666,7 +755,68 @@ Widget _buildStepProgressBar() {
           stream: _stepCountController.stream,
           builder: (context, snapshot) {
             if (snapshot.connectionState == ConnectionState.waiting) {
-              return CircularProgressIndicator();
+               final progress = noSteps / goalSteps;
+              return Column(
+                children: [
+                  Container(
+                    width: 300,
+                    height: 20,
+                    decoration: BoxDecoration(
+                      borderRadius: BorderRadius.circular(10),
+                      color: Colors.grey[300],
+                    ),
+                    child: Stack(
+                      children: [
+                        ClipRRect(
+                          borderRadius: BorderRadius.circular(10),
+                          child: FractionallySizedBox(
+                            widthFactor: progress.clamp(0.0, 1.0),
+                            child: Container(
+                              decoration: BoxDecoration(
+                                borderRadius: BorderRadius.circular(10),
+                                color: Color.fromARGB(255, 33, 243, 114),
+                              ),
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  SizedBox(height: 8),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Icon(Icons.directions_walk, color: Colors.teal, size: 24),
+                      SizedBox(width: 8),
+                      Text(
+                        '${noSteps} / $goalSteps',
+                        style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
+                      ),
+                      SizedBox(width: 8),
+                      Text(
+                        '(${(progress * 100).toStringAsFixed(1)}%)',
+                        style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.teal),
+                      ),
+                    ],
+                  ),
+                ],
+              );
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+              
             } else if (snapshot.hasError) {
               return Text('Error: ${snapshot.error}');
             } else if (!snapshot.hasData) {
@@ -740,7 +890,52 @@ Widget _buildExerciseProgressBar() {
           stream: _exerciseCountController.stream,
           builder: (context, snapshot) {
             if (snapshot.connectionState == ConnectionState.waiting) {
-              return CircularProgressIndicator();
+              final progress = noExercise / goalExercise;
+              return Column(
+                children: [
+                  Container(
+                    width: 300,
+                    height: 20,
+                    decoration: BoxDecoration(
+                      borderRadius: BorderRadius.circular(10),
+                      color: Colors.grey[300],
+                    ),
+                    child: Stack(
+                      children: [
+                        ClipRRect(
+                          borderRadius: BorderRadius.circular(10),
+                          child: FractionallySizedBox(
+                            widthFactor: progress.clamp(0.0, 1.0),
+                            child: Container(
+                              decoration: BoxDecoration(
+                                borderRadius: BorderRadius.circular(10),
+                                color: Colors.red,
+                              ),
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  SizedBox(height: 8),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Icon(Icons.directions_run, color: Colors.blue, size: 24),
+                      SizedBox(width: 8),
+                      Text(
+                        '${noExercise} / $goalExercise kcal',
+                        style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+                      ),
+                      SizedBox(width: 8),
+                      Text(
+                        '(${(progress * 100).toStringAsFixed(1)}%)',
+                        style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.blue),
+                      ),
+                    ],
+                  ),
+                ],
+              );
             } else if (snapshot.hasError) {
               return Text('Error: ${snapshot.error}');
             } else if (!snapshot.hasData) {
@@ -800,15 +995,28 @@ Widget _buildExerciseProgressBar() {
   );
 }
 
-String _getUserFirstName() {
+Future<String?> getUsername() async {
   User? user = FirebaseAuth.instance.currentUser;
-
-  if (user != null && user.email != null) {
-    return user.email!.split('@')[0];
+  
+  if (user != null) {
+    try {
+      DocumentSnapshot userDoc = await FirebaseFirestore.instance.collection('users').doc(user.uid).get();
+      if (userDoc.exists) {
+        return userDoc.get('username');
+      } else {
+        print('User document does not exist');
+        return null;
+      }
+    } catch (e) {
+      print('Error fetching username: $e');
+      return null;
+    }
   } else {
-    return 'User';
+    print('No user signed in');
+    return null;
   }
 }
+
 void _updateCharacter(Map<String, String> gearUrls) {
   setState(() {
     _baseImageUrl = gearUrls['baseImageUrl'] ?? _baseImageUrl;
@@ -839,48 +1047,115 @@ Future<void> _loadGearUrls() async {
   });
 }
 
+
+
+
+  void gainCoins() async{
+    bool stepsGoalMet =  checkStepsGoal();
+    bool energyGoalMet =  checkEnergyGoal();
+    bool addedCoinsTdy = false;
+    final prefs = await SharedPreferences.getInstance();
+    String today = DateTime.now().toString().substring(0, 10);
+    String lastAdded =  prefs.getString('lastAdded') ?? '';
+    int _streak = prefs.getInt('streak') ?? 0;
+    int _coins = prefs.getInt('coins') ?? 0;
+
+
+    if (lastAdded == today) {
+      addedCoinsTdy = true;
+    }
+
+    if (!addedCoinsTdy  && stepsGoalMet && energyGoalMet) {
+      _coins += 10;
+      for (int i = 0; i < _streak; i++) {
+        _coins += 10;
+      }
+      
+      setState(() {
+        coins =_coins;
+      });
+      prefs.setInt('coins', _coins);
+      prefs.setString('lastAdded', today);
+    }
+  
+  }
+
+
 void _checkGoalsCompletion() async {
   final prefs = await SharedPreferences.getInstance();
+  
 
   // Assuming these functions return boolean values
-  bool stepsGoalMet = await checkStepsGoal();
-  bool energyGoalMet = await checkEnergyGoal();
+  bool stepsGoalMet =  checkStepsGoal();
+  bool energyGoalMet =  checkEnergyGoal();
 
-  DateTime now = DateTime.now();
-  int todayDate = DateTime(now.year, now.month, now.day).millisecondsSinceEpoch;
+  String todayDate = DateTime.now().toString().substring(0, 10);
+  String yesterday = DateTime.now().subtract(const Duration(days: 1)).toString().substring(0, 10);
 
-  int _lastCheckedDate = prefs.getInt('lastCheckedDate') ?? 0;
-  int _currentStreak = prefs.getInt('streak') ?? 0;
 
+  String _lastCheckedDate =  prefs.getString('lastCheckedDate') ?? lastCheckedDate;
+  int _streak =  prefs.getInt('streak') ?? streak;
+
+
+  
+ if (_lastCheckedDate != yesterday && _lastCheckedDate != todayDate) {
+    _streak = 0; // Reset the streak if the user missed a day
+    setState(() {
+    streak = _streak;
+  prefs.setInt('streak', _streak);
+    
+  });
+  }
  
   if (stepsGoalMet && energyGoalMet) {
-    if (_lastCheckedDate == todayDate - Duration(days: 1).inMilliseconds) {
-      _currentStreak += 1; // Continue the streak
+ 
+    if (_lastCheckedDate == yesterday) {
+      
+      
+      _streak += 1; // Continue the streak
+      setState(() {
+    streak = _streak;
+    lastCheckedDate = todayDate;
+    prefs.setString('lastCheckedDate', todayDate);
+  prefs.setInt('streak', _streak);
+    
+  });
     } else {
       
-      _currentStreak = 1; // Reset the streak
-    }
-  } else {
-    _currentStreak = 0; // Reset the streak
-  }
-  setState(() {
-    streak = _currentStreak;
-    _lastCheckedDate = todayDate;
+      streak = 1; // Reset the streak
+      setState(() {
+    streak = _streak;
+    lastCheckedDate = todayDate;
+     prefs.setString('lastCheckedDate', todayDate);
+  prefs.setInt('streak', _streak);
   });
+    }
+  } 
+ 
 
-  prefs.setInt('lastCheckedDate', todayDate);
-  prefs.setInt('streak', _currentStreak);
+
 
   
 }
 
+  Future<void> loadStreak() async {
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+    setState(() {
+      streak = prefs.getInt('streak') ?? 1000;
+      lastCheckedDate = prefs.getString('lastCheckedDate') ?? '';
+    });
+  }
+
 
 bool checkStepsGoal() {
 
+  fetchStepData();
   return noSteps >= goalSteps;
+ 
   }
   
 bool checkEnergyGoal()  {
+  fetchActiveEnergyData();
   return noExercise >= goalExercise;
 }
 

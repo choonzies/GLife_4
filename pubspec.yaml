@@ -25,6 +25,10 @@ dependencies:
   shared_preferences: ^2.2.3
   carousel_slider: ^4.2.1
 
+fonts:
+  - family: CustomFont
+    fonts:
+      - asset: assets/fonts/CustomFont-Regular.ttf
 
 dev_dependencies:
   flutter_launcher_icons: ^0.13.1
