@@ -21,14 +21,9 @@ class _AccessoriesPageState extends State<AccessoriesPage> {
 
   Map<String, String> _accessoryImages = {
     'THE OG HELMET': 'assets/images/helmet.jpg',
-    'Helmet 2': 'assets/images/helmet2.jpg',
-    'Helmet 3': 'assets/images/helmet3.jpg',
-    'Chestplate 1': 'assets/images/testchest.jpg',
-    'Chestplate 2': 'assets/images/chestplate2.jpg',
-    'Leggings 1': 'assets/images/leggings1.jpg',
-    'Leggings 2': 'assets/images/leggings2.jpg',
-    'Boots 1': 'assets/images/boots1.jpg',
-    'Boots 2': 'assets/images/boots2.jpg',
+ 
+    'THE OG CHESTPLATE': 'assets/images/testchest.jpg',
+
   };
 
   Map<String, List<String>> _accessoryOptions = {

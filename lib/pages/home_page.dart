@@ -51,6 +51,7 @@ late int _selectedIndex;
   int streak = 0;
   String lastCheckedDate = '';
   int coins = 0;
+  String username = 'User';
 
   
 
@@ -66,6 +67,10 @@ late int _selectedIndex;
     _loadGoals();
      loadStreak();
      _loadCoins();
+    getUsername();
+     
+   
+     
 
      
 
@@ -137,7 +142,7 @@ void _printSharedPreferencesValues() async {
     }
   }
 
-  Future<int> fetchStepData() async {
+Future<int> fetchStepData() async {
     int steps = 0;
 
     // Get steps for today (i.e., since midnight)
@@ -360,6 +365,8 @@ Future<String> getBedtime() async {
       },
     );
   }
+
+
 void _showChangeBedtimeDialog(BuildContext context) async {
   SharedPreferences prefs = await SharedPreferences.getInstance();
   String bedtimeStr = prefs.getString('bedtime') ?? '22:30'; // Default bedtime if not set
@@ -406,25 +413,14 @@ Widget build(BuildContext context) {
     colors: [Colors.blue, Colors.green],
     tileMode: TileMode.mirror,
   ).createShader(bounds),
-  child: FutureBuilder<String?>(
-    future: getUsername(), // Assuming _getUsername() fetches the username asynchronously
-    builder: (context, snapshot) {
-        if (snapshot.hasError) {
-        return Text('Error: ${snapshot.error}'); // Placeholder for error state
-      } else {
-        String username = snapshot.data ?? 'User'; // Default to 'User' if username is null
-        return Text(
-          "Welcome back, $username!",
-          style: TextStyle(
-            fontSize: 28,
-            fontWeight: FontWeight.bold,
-            color: Colors.black,
-            
-          ),
-        );
-      }
-    },
-  ),
+  child: Text(
+                  "Welcome back, $username!",
+                  style: TextStyle(
+                    fontSize: 28,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.black,
+                  ),
+                ),
 )
 ,
                 SizedBox(height: 10),
@@ -802,20 +798,6 @@ Widget _buildStepProgressBar() {
                 ],
               );
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
               
             } else if (snapshot.hasError) {
               return Text('Error: ${snapshot.error}');
@@ -995,25 +977,24 @@ Widget _buildExerciseProgressBar() {
   );
 }
 
-Future<String?> getUsername() async {
+Future<void> getUsername() async {
   User? user = FirebaseAuth.instance.currentUser;
   
   if (user != null) {
     try {
-      DocumentSnapshot userDoc = await FirebaseFirestore.instance.collection('users').doc(user.uid).get();
+      DocumentSnapshot userDoc = await _firestore.collection('users').doc(user.uid).get();
       if (userDoc.exists) {
-        return userDoc.get('username');
+        setState(() {
+          username = userDoc.get('username');
+        });
       } else {
         print('User document does not exist');
-        return null;
       }
     } catch (e) {
-      print('Error fetching username: $e');
-      return null;
+      print('Error fetching username from home_page: $e');
     }
   } else {
     print('No user signed in');
-    return null;
   }
 }
 
@@ -1051,8 +1032,8 @@ Future<void> _loadGearUrls() async {
 
 
   void gainCoins() async{
-    bool stepsGoalMet =  checkStepsGoal();
-    bool energyGoalMet =  checkEnergyGoal();
+    bool stepsGoalMet =  await checkStepsGoal();
+    bool energyGoalMet =  await checkEnergyGoal();
     bool addedCoinsTdy = false;
     final prefs = await SharedPreferences.getInstance();
     String today = DateTime.now().toString().substring(0, 10);
@@ -1086,8 +1067,8 @@ void _checkGoalsCompletion() async {
   
 
   // Assuming these functions return boolean values
-  bool stepsGoalMet =  checkStepsGoal();
-  bool energyGoalMet =  checkEnergyGoal();
+  bool stepsGoalMet =  await checkStepsGoal();
+  bool energyGoalMet = await checkEnergyGoal();
 
   String todayDate = DateTime.now().toString().substring(0, 10);
   String yesterday = DateTime.now().subtract(const Duration(days: 1)).toString().substring(0, 10);
@@ -1096,67 +1077,117 @@ void _checkGoalsCompletion() async {
   String _lastCheckedDate =  prefs.getString('lastCheckedDate') ?? lastCheckedDate;
   int _streak =  prefs.getInt('streak') ?? streak;
 
-
   
  if (_lastCheckedDate != yesterday && _lastCheckedDate != todayDate) {
     _streak = 0; // Reset the streak if the user missed a day
     setState(() {
     streak = _streak;
+    lastCheckedDate = todayDate;
   prefs.setInt('streak', _streak);
+  prefs.setString('lastCheckedDate', todayDate);
     
   });
   }
  
-  if (stepsGoalMet && energyGoalMet) {
+  
  
-    if (_lastCheckedDate == yesterday) {
-      
-      
-      _streak += 1; // Continue the streak
-      setState(() {
+if (_lastCheckedDate == yesterday) {
+  if  (stepsGoalMet && energyGoalMet) {
+    _streak += 1; // Continue the streak
+    setState(() {
     streak = _streak;
     lastCheckedDate = todayDate;
     prefs.setString('lastCheckedDate', todayDate);
-  prefs.setInt('streak', _streak);
-    
+    prefs.setInt('streak', _streak);
   });
-    } else {
-      
-      streak = 1; // Reset the streak
-      setState(() {
-    streak = _streak;
-    lastCheckedDate = todayDate;
-     prefs.setString('lastCheckedDate', todayDate);
-  prefs.setInt('streak', _streak);
-  });
-    }
-  } 
- 
-
+  
+}
 
 
   
+}
+  saveHighestStreak();
+  logHighestStreak();
 }
 
   Future<void> loadStreak() async {
     SharedPreferences prefs = await SharedPreferences.getInstance();
     setState(() {
-      streak = prefs.getInt('streak') ?? 1000;
+      streak = prefs.getInt('streak') ?? 0;
       lastCheckedDate = prefs.getString('lastCheckedDate') ?? '';
     });
   }
 
 
-bool checkStepsGoal() {
+Future<bool>  checkStepsGoal() async{
 
-  fetchStepData();
   return noSteps >= goalSteps;
  
   }
   
-bool checkEnergyGoal()  {
-  fetchActiveEnergyData();
+Future<bool> checkEnergyGoal() async {
+  
   return noExercise >= goalExercise;
 }
+
+void saveHighestStreak() async{
+  SharedPreferences prefs = await SharedPreferences.getInstance();
+  int highestStreak = prefs.getInt('highestStreak') ?? 0;
+  if (streak > highestStreak) {
+    await prefs.setInt('highestStreak', streak);
+  }
+}
+
+void logHighestStreak() async {
+  FirebaseAuth auth = FirebaseAuth.instance;
+  User? user = auth.currentUser;
+  if (user != null) {
+    int highestStreak = 0;
+    final prefs = await SharedPreferences.getInstance();
+    highestStreak = prefs.getInt('highestStreak') ?? 0;
+    await _firestore.collection('users').doc(user.uid).update({'highestStreak': highestStreak});
+  }
+
+}
+
+Future<void> saveAndLogTotalSteps() async {
+  final SharedPreferences prefs = await SharedPreferences.getInstance();
+  
+  
+  // Retrieve current and previous step counts
+  int totalSteps = prefs.getInt('totalSteps') ?? 0;
+  int previousSteps = prefs.getInt('previousSteps') ?? 0;
+  int currentSteps = noSteps;
+  
+  // Fetch current step data
+  // Implement this method to get current steps from the health API or source
+  
+  // Calculate steps to add (steps taken since last update)
+  int stepsToAdd = currentSteps - previousSteps;
+  if (stepsToAdd < 0) {
+    stepsToAdd = 0; // Prevent negative steps if the source resets at midnight
+  }
+  
+  // Accumulate total steps
+  totalSteps += stepsToAdd;
+  
+  // Update SharedPreferences
+  await prefs.setInt('previousSteps', currentSteps);
+  await prefs.setInt('totalSteps', totalSteps);
+  
+  // Update Firestore
+  FirebaseAuth auth = FirebaseAuth.instance;
+  User? user = auth.currentUser;
+  
+  if (user != null) {
+    try {
+      await _firestore.collection('users').doc(user.uid).update({'totalSteps': totalSteps});
+    } catch (e) {
+      print('Error updating total steps in Firestore: $e');
+    }
+  }
+}
+
+
 
 }

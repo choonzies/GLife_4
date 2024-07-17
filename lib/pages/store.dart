@@ -20,20 +20,17 @@ class _StorePageState extends State<StorePage> {
   Map<String, List<Map<String, dynamic>>> _accessoryOptions = {
     'Helmets': [
       {'name': 'THE OG HELMET', 'image': 'assets/images/helmet.jpg'},
-      {'name': 'Helmet 2', 'image': 'assets/images/helmet2.jpg'},
-      {'name': 'Helmet 3', 'image': 'assets/images/helmet3.jpg'},
+      
     ],
     'Chestplates': [
-      {'name': 'Chestplate 1', 'image': 'assets/images/testchest.jpg'},
-      {'name': 'Chestplate 2', 'image': 'assets/images/chestplate2.jpg'},
+      {'name': 'THE OG CHESTPLATE', 'image': 'assets/images/testchest.jpg'},
+      
     ],
     'Leggings': [
-      {'name': 'Leggings 1', 'image': 'assets/images/leggings1.jpg'},
-      {'name': 'Leggings 2', 'image': 'assets/images/leggings2.jpg'},
+      
     ],
     'Boots': [
-      {'name': 'Boots 1', 'image': 'assets/images/boots1.jpg'},
-      {'name': 'Boots 2', 'image': 'assets/images/boots2.jpg'},
+      
     ],
   };
 

@@ -1,6 +1,9 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import 'groups.dart'; // Import the Groups page
+import 'package:glife/pages/user_details.dart';
+import 'package:glife/pages/home_page.dart';
 
 class Friends extends StatefulWidget {
   Friends({Key? key}) : super(key: key);
@@ -29,6 +32,25 @@ class _FriendsState extends State<Friends> {
     fetchFriendReqs();
   }
 
+Future<String?> getUidByUsername(String username) async {
+    String? uid;
+
+    try {
+      QuerySnapshot<Map<String, dynamic>> querySnapshot = await _firestore
+          .collection('users')
+          .where('username', isEqualTo: username)
+          .limit(1) // Assuming there is only one user with the given username
+          .get();
+
+      if (querySnapshot.docs.isNotEmpty) {
+        uid = querySnapshot.docs.first.id; // Get the document ID (UID)
+      }
+    } catch (e) {
+      print('Error getting UID by username: $e');
+    }
+
+    return uid;
+  }
   Future<void> _getUsername() async {
     if (user != null) {
       try {
@@ -42,7 +64,7 @@ class _FriendsState extends State<Friends> {
           print('User document does not exist');
         }
       } catch (e) {
-        print('Error fetching username: $e');
+        print('Error fetching username from friends.dart: $e');
       }
     } else {
       print('No user signed in');
@@ -127,252 +149,277 @@ class _FriendsState extends State<Friends> {
   }
 
   void showAddFriendDialog(BuildContext context) {
-  TextEditingController textFieldController = TextEditingController();
+    TextEditingController textFieldController = TextEditingController();
 
-  showDialog(
-    context: context,
-    builder: (BuildContext context) {
-      return AlertDialog(
-        title: const Text('Add Friend'),
-        content: SingleChildScrollView(
-          child: ListBody(
-            children: <Widget>[
-              TextField(
-                controller: textFieldController,
-                decoration: const InputDecoration(
-                  hintText: 'Friend username',
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: const Text('Add Friend'),
+          content: SingleChildScrollView(
+            child: ListBody(
+              children: <Widget>[
+                TextField(
+                  controller: textFieldController,
+                  decoration: const InputDecoration(
+                    hintText: 'Friend username',
+                  ),
                 ),
-              ),
-            ],
+              ],
+            ),
           ),
-        ),
-        actions: <Widget>[
-          TextButton(
-            child: const Text('Add'),
-            onPressed: () async {
-              String friendUsername = textFieldController.text.trim();
+          actions: <Widget>[
+            TextButton(
+              child: const Text('Add'),
+              onPressed: () async {
+                String friendUsername = textFieldController.text.trim();
 
-              if (friendUsername.isNotEmpty) {
-                // Check if already friends
-                if (friends.contains(friendUsername)) {
+                if (friendUsername.isNotEmpty) {
+                  // Check if already friends
+                  if (friends.contains(friendUsername)) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(
+                        content: Text('Already friends!'),
+                        duration: Duration(seconds: 1),
+                      ),
+                    );
+                  } else {
+                    try {
+                      DocumentSnapshot userDoc = await _firestore
+                          .collection('users')
+                          .doc(user!.uid)
+                          .get();
+                    String? name = await getUidByUsername(friendUsername);
+                      if (userDoc.exists && name != null) {
+                        // Send friend request to the friend
+                        
+                        
+                        await addFieldListItem(
+                            'users', name, 'friendReqs', username!);
+                        Navigator.of(context).pop(); // Close the dialog
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(
+                            content: Text('Friend request sent!'),
+                            duration: Duration(seconds: 1),
+                          ),
+                        );
+                      } else {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(
+                            content: Text('Username not found!'),
+                            duration: Duration(seconds: 1),
+                          ),
+                        );
+                      }
+                    } catch (e) {
+                      print('Error adding friend request: $e');
+                    }
+                  }
+                } else {
                   ScaffoldMessenger.of(context).showSnackBar(
                     const SnackBar(
-                      content: Text('Already friends!'),
+                      content: Text('Invalid username!'),
                       duration: Duration(seconds: 1),
                     ),
                   );
-                } else {
-                  try {
-                    DocumentSnapshot userDoc = await FirebaseFirestore.instance
-                        .collection('users')
-                        .doc(user!.uid)
-                        .get();
-
-                    if (userDoc.exists) {
-                      // Send friend request to the friend
-                      await addFieldListItem(
-                          'users', user!.uid, 'friendReqs', friendUsername);
-                      Navigator.of(context).pop(); // Close the dialog
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(
-                          content: Text('Friend request sent!'),
-                          duration: Duration(seconds: 1),
-                        ),
-                      );
-                    } else {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(
-                          content: Text('Username not found!'),
-                          duration: Duration(seconds: 1),
-                        ),
-                      );
-                    }
-                  } catch (e) {
-                    print('Error adding friend request: $e');
-                  }
                 }
-              } else {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(
-                    content: Text('Invalid username!'),
-                    duration: Duration(seconds: 1),
+              },
+            ),
+            TextButton(
+              child: const Text('Cancel'),
+              onPressed: () {
+                Navigator.of(context).pop(); // Close the dialog
+              },
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  void showFriendRequestsDialog(BuildContext context) {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: const Text('Friend Requests'),
+          content: Container(
+            width: double.minPositive,
+            height: 300.0,
+            child: ListView.builder(
+              itemCount: friendReqs.length,
+              itemBuilder: (BuildContext context, int index) {
+                return ListTile(
+                  title: Text(friendReqs[index]),
+                  trailing: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      IconButton(
+                        icon: const Icon(Icons.check),
+                        onPressed: () async {
+                          String friendUsername = friendReqs[index];
+
+                          // Add friend to your friends list
+                          await addFieldListItem(
+                            'users', user!.uid, 'friends', friendUsername);
+
+                          // Add yourself to friend's friends list
+                          DocumentSnapshot friendDoc = await _firestore
+                              .collection('users')
+                              .where('username', isEqualTo: friendUsername)
+                              .get()
+                              .then((querySnapshot) => querySnapshot.docs.first);
+
+                          if (friendDoc.exists) {
+                            await addFieldListItem(
+                              'users', friendDoc.id, 'friends', username!);
+                          } else {
+                            print('Friend document not found');
+                          }
+
+                          // Remove friend request from your list
+                          await deleteFieldListItem(
+                            'users', user!.uid, 'friendReqs', friendUsername);
+
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(
+                              content: Text('Added $friendUsername as friend'),
+                              duration: const Duration(seconds: 1),
+                            ),
+                          );
+
+                          // Update local lists
+                          setState(() {
+                            friends.add(friendUsername);
+                            filteredFriends.add(friendUsername);
+                            friendReqs.remove(friendUsername);
+                          });
+                        },
+                      ),
+                      IconButton(
+                        icon: const Icon(Icons.close),
+                        onPressed: () async {
+                          // Remove friend request
+                          await deleteFieldListItem(
+                            'users', user!.uid, 'friendReqs', friendReqs[index]);
+
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(
+                              content: Text('Rejected ${friendReqs[index]}'),
+                              duration: const Duration(seconds: 1),
+                            ),
+                          );
+
+                          // Update local list
+                          setState(() {
+                            friendReqs.remove(friendReqs[index]);
+                          });
+                        },
+                      ),
+                    ],
                   ),
                 );
-              }
-            },
+              },
+            ),
           ),
-          TextButton(
-            child: const Text('Cancel'),
-            onPressed: () {
-              Navigator.of(context).pop(); // Close the dialog
-            },
+          actions: <Widget>[
+            TextButton(
+              child: const Text('Close'),
+              onPressed: () {
+                Navigator.of(context).pop();
+              },
+            ),
+          ],
+        );
+      },
+    ).then((_) {
+      // After dialog is closed, trigger a rebuild of the friends list
+      setState(() {});
+    });
+  }
+
+Widget _buildFriendsList() {
+  return Expanded(
+    child: ListView.builder(
+      itemCount: filteredFriends.length,
+      itemBuilder: (context, index) {
+        String member = filteredFriends[index]; // Get the friend's username
+
+        return GestureDetector(
+          onTap: () {
+            Navigator.push(
+              context,
+              MaterialPageRoute(builder: (context) => UserDetails(member)),
+            );
+          },
+          child: Card(
+            elevation: 3,
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+            margin: EdgeInsets.only(bottom: 16),
+            child: ListTile(
+              title: Text(
+                member,
+                style: TextStyle(color: Color(0xFF101213), fontSize: 18, fontWeight: FontWeight.w600),
+              ),
+              
+            ),
           ),
-        ],
-      );
-    },
+        );
+      },
+    ),
   );
 }
 
 
-  void showFriendRequestsDialog(BuildContext context) {
-  showDialog(
-    context: context,
-    builder: (BuildContext context) {
-      return AlertDialog(
-        title: const Text('Friend Requests'),
-        content: Container(
-          width: double.minPositive,
-          height: 300.0,
-          child: ListView.builder(
-            itemCount: friendReqs.length,
-            itemBuilder: (BuildContext context, int index) {
-              return ListTile(
-                title: Text(friendReqs[index]),
-                trailing: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    IconButton(
-                      icon: const Icon(Icons.check),
-                      onPressed: () async {
-                        String friendUsername = friendReqs[index];
-
-                        // Add friend to your friends list
-                        await addFieldListItem(
-                          'users', user!.uid, 'friends', friendUsername);
-
-                        // Add yourself to friend's friends list
-                        DocumentSnapshot friendDoc = await _firestore
-                            .collection('users')
-                            .where('username', isEqualTo: friendUsername)
-                            .get()
-                            .then((querySnapshot) => querySnapshot.docs.first);
-
-                        if (friendDoc.exists) {
-                          await addFieldListItem(
-                            'users', friendDoc.id, 'friends', username!);
-                        } else {
-                          print('Friend document not found');
-                        }
-
-                        // Remove friend request from your list
-                        await deleteFieldListItem(
-                          'users', user!.uid, 'friendReqs', friendUsername);
-
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          SnackBar(
-                            content: Text('Added $friendUsername as friend'),
-                            duration: const Duration(seconds: 1),
-                          ),
-                        );
-
-                        // Update local lists
-                        setState(() {
-                          friends.add(friendUsername);
-                          filteredFriends.add(friendUsername);
-                          friendReqs.remove(friendUsername);
-                        });
-                      },
-                    ),
-                    IconButton(
-                      icon: const Icon(Icons.close),
-                      onPressed: () async {
-                        // Remove friend request
-                        await deleteFieldListItem(
-                          'users', user!.uid, 'friendReqs', friendReqs[index]);
-
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          SnackBar(
-                            content: Text('Rejected ${friendReqs[index]}'),
-                            duration: const Duration(seconds: 1),
-                          ),
-                        );
-
-                        // Update local list
-                        setState(() {
-                          friendReqs.remove(friendReqs[index]);
-                        });
-                      },
-                    ),
-                  ],
-                ),
-              );
-            },
-          ),
-        ),
-        actions: <Widget>[
-          TextButton(
-            child: const Text('Close'),
-            onPressed: () {
-              Navigator.of(context).pop();
-            },
-          ),
-        ],
-      );
-    },
-  ).then((_) {
-    // After dialog is closed, trigger a rebuild of the friends list
-    setState(() {});
-  });
-}
-
-
-  Widget _buildFriendsList() {
-    return Expanded(
-      child: ListView.builder(
-        itemCount: filteredFriends.length,
-        itemBuilder: (context, index) {
-          return ListTile(
-            title: Text(filteredFriends[index]),
-          );
-        },
-      ),
-    );
-  }
-
   @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text('Friends'),
-      ),
-      body: Column(
-        children: [
-          Padding(
-            padding: const EdgeInsets.all(8.0),
-            child: TextField(
-              onChanged: (value) => filterFriends(value),
-              decoration: InputDecoration(
-                hintText: 'Search Friends',
-                prefixIcon: const Icon(Icons.search),
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(10.0),
-                ),
+  @override
+Widget build(BuildContext context) {
+  return Scaffold(
+    appBar: AppBar(
+      title: const Text('Friends'),
+      actions: [
+        IconButton(
+          icon: const Icon(Icons.add),
+          onPressed: () {
+            showAddFriendDialog(context);
+          },
+        ),
+        IconButton(
+          icon: const Icon(Icons.notifications),
+          onPressed: () {
+            showFriendRequestsDialog(context);
+          },
+        ),
+        IconButton(
+          icon: const Icon(Icons.group),
+          onPressed: () {
+            Navigator.push(
+              context,
+              MaterialPageRoute(builder: (context) => Groups()),
+            );
+          },
+        ),
+      ],
+    ),
+    body: Column(
+      children: [
+        Padding(
+          padding: const EdgeInsets.all(8.0),
+          child: TextField(
+            onChanged: (value) => filterFriends(value),
+            decoration: InputDecoration(
+              hintText: 'Search Friends',
+              prefixIcon: const Icon(Icons.search),
+              border: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(10.0),
               ),
             ),
           ),
-          _buildFriendsList(),
-        ],
-      ),
-      floatingActionButton: Column(
-        mainAxisAlignment: MainAxisAlignment.end,
-        children: [
-          FloatingActionButton.extended(
-            onPressed: () {
-              showAddFriendDialog(context);
-            },
-            label: const Text('Add Friend'),
-            icon: const Icon(Icons.add),
-          ),
-          const SizedBox(height: 16.0),
-          FloatingActionButton.extended(
-            onPressed: () {
-              showFriendRequestsDialog(context);
-            },
-            label: const Text('Requests'),
-            icon: const Icon(Icons.notifications),
-          ),
-        ],
-      )
-    );
-  }
+        ),
+        _buildFriendsList(),
+      ],
+    ),
+  );
+}
+
 }
