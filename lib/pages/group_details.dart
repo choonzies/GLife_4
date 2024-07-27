@@ -116,8 +116,19 @@ class _GroupDetailsState extends State<GroupDetails> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text(groupName),
         backgroundColor: Colors.green,
+        title: Text(groupName),
+        
+        flexibleSpace: Container(
+          decoration: BoxDecoration(
+            gradient: LinearGradient(
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+              colors: <Color>[Colors.green, Colors.blue],
+            ),
+          ),
+        ),
+        
       ),
       body: Padding(
         padding: const EdgeInsets.all(24.0),

@@ -422,6 +422,15 @@ Widget _buildGroupsList() {
     return Scaffold(
       appBar: AppBar(
         title: const Text('Groups'),
+        flexibleSpace: Container(
+          decoration: BoxDecoration(
+            gradient: LinearGradient(
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+              colors: <Color>[Colors.green, Colors.blue],
+            ),
+          ),
+        ),
         actions: <Widget>[
           IconButton(
             icon: const Icon(Icons.group_add),

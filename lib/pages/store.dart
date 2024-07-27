@@ -35,7 +35,7 @@ class _StorePageState extends State<StorePage> {
   };
 
   Map<String, int> _itemPrices = {
-    'THE OG HELMET': 20,
+    'THE OG HELMET': 0,
     'Helmet 2': 30,
     'Helmet 3': 25,
     'Chestplate 1': 35,

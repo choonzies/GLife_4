@@ -90,12 +90,10 @@ late int _selectedIndex;
     _stepCountController = StreamController<int>.broadcast();
     _exerciseCountController = StreamController<int>.broadcast();
 
-
+fetchActiveEnergyData();
+fetchStepData();
     // Set up the step count stream
-    Timer.periodic(Duration(seconds: 10), (timer) => fetchStepData());
-
-    // Set up the exercise count stream
-    Timer.periodic(Duration(seconds: 10), (timer) => fetchActiveEnergyData());
+  
     _printSharedPreferencesValues();
 
     
@@ -166,10 +164,11 @@ Future<int> fetchStepData() async {
         noSteps = steps;
       });
 
-      _stepCountController.add(steps); // Add steps data to stream
+      //_stepCountController.add(steps); // Add steps data to stream
     } else {
       debugPrint("Authorization not granted - error in authorization");
     }
+    saveAndLogTotalSteps(steps);
     return steps;
   }
 
@@ -216,6 +215,7 @@ Future<int> fetchActiveEnergyData() async {
     
 
     // Update state and stream controller with active calories data
+
     setState(() {
       noExercise = activeCalories;
     });
@@ -223,7 +223,7 @@ Future<int> fetchActiveEnergyData() async {
   } else {
     debugPrint("Authorization not granted for active calories - error in authorization");
   }
-
+saveAndLogTotalCalories(activeCalories);
   return activeCalories;
 }
 
@@ -707,30 +707,30 @@ Positioned(
           ),
         ],
       ),
-      body: Center(
-        child: _widgetOptions.elementAt(_selectedIndex),
-      ),
-      bottomNavigationBar: BottomNavigationBar(
-        items: const <BottomNavigationBarItem>[
-          BottomNavigationBarItem(icon: Icon(Icons.emoji_events), label: 'Achievements'),
-          BottomNavigationBarItem(icon: Icon(Icons.person), label: 'Me'),
-          BottomNavigationBarItem(icon: Icon(Icons.group), label: 'Friends'),
-        ],
-        currentIndex: _selectedIndex,
-        selectedItemColor: Colors.green,
-        onTap: (index) {
-          setState(() {
-            _selectedIndex = index;
-          });
-
-          // Handle navigation to AchievementsPage
-          
-
-          
-        },
-      ),
-    );
-  }
+      body: RefreshIndicator(
+  onRefresh: () async {
+    await fetchStepData();
+    await fetchActiveEnergyData();
+  },
+  child: Center(
+    child: _widgetOptions.elementAt(_selectedIndex),
+  ),
+),
+bottomNavigationBar: BottomNavigationBar(
+  items: const <BottomNavigationBarItem>[
+    BottomNavigationBarItem(icon: Icon(Icons.emoji_events), label: 'Achievements'),
+    BottomNavigationBarItem(icon: Icon(Icons.person), label: 'Me'),
+    BottomNavigationBarItem(icon: Icon(Icons.group), label: 'Friends'),
+  ],
+  currentIndex: _selectedIndex,
+  selectedItemColor: Colors.green,
+  onTap: (index) {
+    setState(() {
+      _selectedIndex = index;
+    });
+  },
+),);}
+    
 
 
 
@@ -1120,19 +1120,19 @@ if (_lastCheckedDate == yesterday) {
 
 
 Future<bool>  checkStepsGoal() async{
-
-  return noSteps >= goalSteps;
+  int step = await fetchStepData();
+  return step >= goalSteps;
  
   }
   
 Future<bool> checkEnergyGoal() async {
-  
-  return noExercise >= goalExercise;
+  int cal = await fetchActiveEnergyData();
+  return cal >= goalExercise;
 }
 
 void saveHighestStreak() async{
   SharedPreferences prefs = await SharedPreferences.getInstance();
-  int highestStreak = prefs.getInt('highestStreak') ?? 0;
+  int highestStreak = prefs.getInt('highestStreak') ?? -1;
   if (streak > highestStreak) {
     await prefs.setInt('highestStreak', streak);
   }
@@ -1150,14 +1150,14 @@ void logHighestStreak() async {
 
 }
 
-Future<void> saveAndLogTotalSteps() async {
+Future<void> saveAndLogTotalSteps(int currentSteps) async {
   final SharedPreferences prefs = await SharedPreferences.getInstance();
   
   
   // Retrieve current and previous step counts
   int totalSteps = prefs.getInt('totalSteps') ?? 0;
   int previousSteps = prefs.getInt('previousSteps') ?? 0;
-  int currentSteps = noSteps;
+
   
   // Fetch current step data
   // Implement this method to get current steps from the health API or source
@@ -1188,6 +1188,43 @@ Future<void> saveAndLogTotalSteps() async {
   }
 }
 
+Future<void> saveAndLogTotalCalories(int currentCalories) async {
+  final SharedPreferences prefs = await SharedPreferences.getInstance();
+  
+  
+  // Retrieve current and previous step counts
+  int totalCalories = prefs.getInt('totalCalories') ?? 0;
+  int previousCalories = prefs.getInt('previousCalories') ?? 0;
+
+  
+  // Fetch current step data
+  // Implement this method to get current steps from the health API or source
+  
+  // Calculate steps to add (steps taken since last update)
+  int caloriessToAdd = currentCalories - previousCalories;
+  if (caloriessToAdd < 0) {
+    caloriessToAdd = 0; // Prevent negative steps if the source resets at midnight
+  }
+  
+  // Accumulate total steps
+  totalCalories += caloriessToAdd;
+  
+  // Update SharedPreferences
+  await prefs.setInt('previousCalories', currentCalories);
+  await prefs.setInt('totalCalories', totalCalories);
+  
+  // Update Firestore
+  FirebaseAuth auth = FirebaseAuth.instance;
+  User? user = auth.currentUser;
+  
+  if (user != null) {
+    try {
+      await _firestore.collection('users').doc(user.uid).update({'totalCalories': totalCalories});
+    } catch (e) {
+      print('Error updating total calories in Firestore: $e');
+    }
+  }
+}
 
 
 }

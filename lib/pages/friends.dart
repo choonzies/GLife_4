@@ -57,9 +57,10 @@ Future<String?> getUidByUsername(String username) async {
         DocumentSnapshot userDoc =
             await _firestore.collection('users').doc(user!.uid).get();
         if (userDoc.exists) {
+          if (mounted) {
           setState(() {
             username = userDoc.get('username');
-          });
+          });}
         } else {
           print('User document does not exist');
         }
@@ -76,10 +77,11 @@ Future<String?> getUidByUsername(String username) async {
       DocumentSnapshot userDoc =
           await _firestore.collection('users').doc(user!.uid).get();
       if (userDoc.exists) {
+        if (mounted) {
         setState(() {
           friends = userDoc.get('friends') ?? [];
           filteredFriends.addAll(friends);
-        });
+        });}
       } else {
         print('Document does not exist for username: $username');
       }
@@ -93,9 +95,10 @@ Future<String?> getUidByUsername(String username) async {
       DocumentSnapshot userDoc =
           await _firestore.collection('users').doc(user!.uid).get();
       if (userDoc.exists) {
+        if (mounted) {
         setState(() {
           friendReqs = userDoc.get('friendReqs') ?? [];
-        });
+        });}
       } else {
         print('Document does not exist for username: $username');
       }
@@ -377,6 +380,7 @@ Widget build(BuildContext context) {
   return Scaffold(
     appBar: AppBar(
       title: const Text('Friends'),
+      
       actions: [
         IconButton(
           icon: const Icon(Icons.add),
