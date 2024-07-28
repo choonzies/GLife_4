@@ -1,3 +1,4 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -35,8 +36,25 @@ class _AchievementsPageState extends State<AchievementsPage> {
     });
   }
 
+  final FirebaseFirestore _firestore = FirebaseFirestore.instance;
+  
+  Future<void> addFieldListItem(
+      String collection, String document, String field, String item) async {
+    try {
+      print(123);
+      await _firestore.collection(collection).doc(document).update({
+        field: FieldValue.arrayUnion([item]),
+      });
+      print('Item added to ListField successfully');
+    } catch (e) {
+      print('Error adding item: $e');
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
+    addFieldListItem('users', 'whatthe', 'awuw', 'faq111qq');
+    print('huh');
     return Scaffold(
       appBar: AppBar(
         title: Text('Achievements'),

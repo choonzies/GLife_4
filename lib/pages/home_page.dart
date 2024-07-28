@@ -59,6 +59,7 @@ class _HomePageState extends State<HomePage>
     loadStreak();
     _loadCoins();
     getUsername();
+    _checkGoalsCompletion();
 
     // Initialize animation controller and animation
     _controller = AnimationController(
@@ -111,85 +112,83 @@ class _HomePageState extends State<HomePage>
   }
 
   Future<int> fetchStepData() async {
-    return 500;
-    int steps = 0;
+    int steps = 500;
 
-    // Get steps for today (i.e., since midnight)
-    final now = DateTime.now();
-    final midnight = DateTime(now.year, now.month, now.day);
+    // // Get steps for today (i.e., since midnight)
+    // final now = DateTime.now();
+    // final midnight = DateTime(now.year, now.month, now.day);
 
-    bool stepsPermission =
-        await Health().hasPermissions([HealthDataType.STEPS]) ?? false;
-    if (!stepsPermission) {
-      stepsPermission =
-          await Health().requestAuthorization([HealthDataType.STEPS]);
-    }
+    // bool stepsPermission =
+    //     await Health().hasPermissions([HealthDataType.STEPS]) ?? false;
+    // if (!stepsPermission) {
+    //   stepsPermission =
+    //       await Health().requestAuthorization([HealthDataType.STEPS]);
+    // }
 
-    if (stepsPermission) {
-      try {
-        steps = await Health().getTotalStepsInInterval(midnight, now) ?? 0;
-      } catch (error) {
-        debugPrint("Exception in getTotalStepsInInterval: $error");
-      }
+    // if (stepsPermission) {
+    //   try {
+    //     steps = await Health().getTotalStepsInInterval(midnight, now) ?? 0;
+    //   } catch (error) {
+    //     debugPrint("Exception in getTotalStepsInInterval: $error");
+    //   }
 
-      setState(() {
-        noSteps = steps;
-      });
+    //   setState(() {
+    //     noSteps = steps;
+    //   });
 
-      //_stepCountController.add(steps); // Add steps data to stream
-    } else {
-      debugPrint("Authorization not granted - error in authorization");
-    }
+    //   //_stepCountController.add(steps); // Add steps data to stream
+    // } else {
+    //   debugPrint("Authorization not granted - error in authorization");
+    // }
     saveAndLogTotalSteps(steps);
     return steps;
   }
 
   Future<int> fetchActiveEnergyData() async {
-    return 500;
-    int activeCalories = 0;
-    var types = [HealthDataType.ACTIVE_ENERGY_BURNED];
+    int activeCalories = 500;
+    // var types = [HealthDataType.ACTIVE_ENERGY_BURNED];
 
-    // Get active calories for today (i.e., since midnight)
-    final now = DateTime.now();
-    final midnight = DateTime(now.year, now.month, now.day);
+    // // Get active calories for today (i.e., since midnight)
+    // final now = DateTime.now();
+    // final midnight = DateTime(now.year, now.month, now.day);
 
-    bool caloriesPermission = await Health().hasPermissions(types) ?? false;
-    if (!caloriesPermission) {
-      caloriesPermission = await Health().requestAuthorization(types);
-    }
+    // bool caloriesPermission = await Health().hasPermissions(types) ?? false;
+    // if (!caloriesPermission) {
+    //   caloriesPermission = await Health().requestAuthorization(types);
+    // }
 
-    if (caloriesPermission) {
-      try {
-        // Fetch active calories data points from today
-        List<HealthDataPoint> healthData =
-            await Health().getHealthDataFromTypes(
-          startTime: midnight,
-          endTime: now,
-          types: types,
-        );
+    // if (caloriesPermission) {
+    //   try {
+    //     // Fetch active calories data points from today
+    //     List<HealthDataPoint> healthData =
+    //         await Health().getHealthDataFromTypes(
+    //       startTime: midnight,
+    //       endTime: now,
+    //       types: types,
+    //     );
 
-        // Sum up the active calories from all data points
-        int cal = 0;
-        for (HealthDataPoint dataPoint in healthData) {
-          cal = dataPoint.toJson()['value'].numericValue.toInt();
-          activeCalories += cal;
-        }
-      } catch (error) {
-        debugPrint("Exception in fetching active calories: $error");
-      }
+    //     // Sum up the active calories from all data points
+    //     int cal = 0;
+    //     for (HealthDataPoint dataPoint in healthData) {
+    //       cal = dataPoint.toJson()['value'].numericValue.toInt();
+    //       activeCalories += cal;
+    //     }
+    //   } catch (error) {
+    //     debugPrint("Exception in fetching active calories: $error");
+    //   }
 
-      // Log daily active calories to Firestore
+    //   // Log daily active calories to Firestore
 
-      // Update state and stream controller with active calories data
+    //   // Update state and stream controller with active calories data
 
-      setState(() {
-        noExercise = activeCalories;
-      });
-      _exerciseCountController.add(activeCalories);
-    } else {
-      debugPrint(
-          "Authorization not granted for active calories - error in authorization");
-    }
+    //   setState(() {
+    //     noExercise = activeCalories;
+    //   });
+    //   _exerciseCountController.add(activeCalories);
+    // } else {
+    //   debugPrint(
+    //       "Authorization not granted for active calories - error in authorization");
+    // }
     saveAndLogTotalCalories(activeCalories);
     return activeCalories;
   }
@@ -539,8 +538,6 @@ class _HomePageState extends State<HomePage>
             top: 10,
             child: Builder(
               builder: (context) {
-                _checkGoalsCompletion();
-
                 return Container(
                   decoration: BoxDecoration(
                     gradient: LinearGradient(
@@ -1110,6 +1107,7 @@ class _HomePageState extends State<HomePage>
   }
 
   void logHighestStreak() async {
+    return;
     FirebaseAuth auth = FirebaseAuth.instance;
     User? user = auth.currentUser;
     if (user != null) {
@@ -1149,7 +1147,7 @@ class _HomePageState extends State<HomePage>
     // Update Firestore
     FirebaseAuth auth = FirebaseAuth.instance;
     User? user = auth.currentUser;
-
+return;
     if (user != null) {
       try {
         await _firestore
@@ -1190,6 +1188,7 @@ class _HomePageState extends State<HomePage>
     FirebaseAuth auth = FirebaseAuth.instance;
     User? user = auth.currentUser;
 
+return;
     if (user != null) {
       try {
         await _firestore

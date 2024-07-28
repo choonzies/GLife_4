@@ -29,6 +29,10 @@ class _LoginPageState extends State<LoginPage> {
       await _firestore.collection('users').doc(userId).set({
         'email': _controllerEmail.text,
         'username': _controllerUsername.text,
+        'friends': [],
+        'friendReqs': [],
+        "groups": [],
+        "groupReqs": [],
       });
     }
   }
