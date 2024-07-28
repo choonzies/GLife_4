@@ -133,7 +133,7 @@ void _printSharedPreferencesValues() async {
 
 
   Future<void> _checkAndRequestHealthAccess() async {
-    var types = [HealthDataType.STEPS, HealthDataType.EXERCISE_TIME];
+    var types = [HealthDataType.STEPS, HealthDataType.ACTIVE_ENERGY_BURNED];
     bool accessGranted = await Health().requestAuthorization(types);
     if (!accessGranted) {
       print("Health access not granted");
@@ -168,7 +168,7 @@ Future<int> fetchStepData() async {
     } else {
       debugPrint("Authorization not granted - error in authorization");
     }
-    saveAndLogTotalSteps(steps);
+    //saveAndLogTotalSteps(steps);
     return steps;
   }
 
@@ -223,7 +223,7 @@ Future<int> fetchActiveEnergyData() async {
   } else {
     debugPrint("Authorization not granted for active calories - error in authorization");
   }
-saveAndLogTotalCalories(activeCalories);
+//saveAndLogTotalCalories(activeCalories);
   return activeCalories;
 }
 
@@ -235,7 +235,7 @@ saveAndLogTotalCalories(activeCalories);
     SharedPreferences prefs = await SharedPreferences.getInstance();
     setState(() {
       goalSteps = prefs.getInt('goalSteps') ?? 1000;
-      goalExercise = prefs.getInt('goalExercise') ?? 30;
+      goalExercise = prefs.getInt('goalExercise') ?? 1000;
     });
   }
 

@@ -27,7 +27,7 @@ class _FriendsState extends State<Friends> {
   }
 
   Future<void> _initializeData() async {
-    await _getUsername();
+     _getUsername();
     fetchFriends();
     fetchFriendReqs();
   }
@@ -56,11 +56,10 @@ Future<String?> getUidByUsername(String username) async {
       try {
         DocumentSnapshot userDoc =
             await _firestore.collection('users').doc(user!.uid).get();
-        if (userDoc.exists) {
-          if (mounted) {
+        if (userDoc.exists) {    
           setState(() {
             username = userDoc.get('username');
-          });}
+          });
         } else {
           print('User document does not exist');
         }
@@ -95,10 +94,9 @@ Future<String?> getUidByUsername(String username) async {
       DocumentSnapshot userDoc =
           await _firestore.collection('users').doc(user!.uid).get();
       if (userDoc.exists) {
-        if (mounted) {
         setState(() {
           friendReqs = userDoc.get('friendReqs') ?? [];
-        });}
+        });
       } else {
         print('Document does not exist for username: $username');
       }
@@ -107,10 +105,9 @@ Future<String?> getUidByUsername(String username) async {
     }
   }
 
-  Future<void> deleteFieldListItem(
-      String collection, String document, String field, String item) async {
+  Future<void> deleteFieldListItem(String collection, String document, String field, String item) async {
     try {
-      await _firestore.collection(collection).doc(document).update({
+       _firestore.collection(collection).doc(document).update({
         field: FieldValue.arrayRemove([item]),
       });
       print('Item removed from ListField successfully');
@@ -119,10 +116,9 @@ Future<String?> getUidByUsername(String username) async {
     }
   }
 
-  Future<void> addFieldListItem(
-      String collection, String document, String field, String item) async {
+  Future<void> addFieldListItem(String collection, String document, String field, String item) async {
     try {
-      await _firestore.collection(collection).doc(document).update({
+       _firestore.collection(collection).doc(document).update({
         field: FieldValue.arrayUnion([item]),
       });
       print('Item added to ListField successfully');
@@ -188,16 +184,11 @@ Future<String?> getUidByUsername(String username) async {
                     );
                   } else {
                     try {
-                      DocumentSnapshot userDoc = await _firestore
-                          .collection('users')
-                          .doc(user!.uid)
-                          .get();
+                      
                     String? name = await getUidByUsername(friendUsername);
-                      if (userDoc.exists && name != null) {
+                      if (name != null) {
                         // Send friend request to the friend
-                        
-                        
-                        await addFieldListItem(
+                          addFieldListItem(
                             'users', name, 'friendReqs', username!);
                         Navigator.of(context).pop(); // Close the dialog
                         ScaffoldMessenger.of(context).showSnackBar(
@@ -263,7 +254,7 @@ Future<String?> getUidByUsername(String username) async {
                           String friendUsername = friendReqs[index];
 
                           // Add friend to your friends list
-                          await addFieldListItem(
+                             addFieldListItem(
                             'users', user!.uid, 'friends', friendUsername);
 
                           // Add yourself to friend's friends list
@@ -274,14 +265,14 @@ Future<String?> getUidByUsername(String username) async {
                               .then((querySnapshot) => querySnapshot.docs.first);
 
                           if (friendDoc.exists) {
-                            await addFieldListItem(
+                              addFieldListItem(
                               'users', friendDoc.id, 'friends', username!);
                           } else {
                             print('Friend document not found');
                           }
 
                           // Remove friend request from your list
-                          await deleteFieldListItem(
+                            deleteFieldListItem(
                             'users', user!.uid, 'friendReqs', friendUsername);
 
                           ScaffoldMessenger.of(context).showSnackBar(
@@ -303,7 +294,7 @@ Future<String?> getUidByUsername(String username) async {
                         icon: const Icon(Icons.close),
                         onPressed: () async {
                           // Remove friend request
-                          await deleteFieldListItem(
+                            deleteFieldListItem(
                             'users', user!.uid, 'friendReqs', friendReqs[index]);
 
                           ScaffoldMessenger.of(context).showSnackBar(
