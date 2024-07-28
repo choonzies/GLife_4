@@ -754,7 +754,7 @@ class _HomePageState extends State<HomePage>
                     Row(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
-                        Icon(Icons.directions_walk,
+                        Icon(Icons.do_not_step,
                             color: Colors.teal, size: 24),
                         SizedBox(width: 8),
                         Text(
