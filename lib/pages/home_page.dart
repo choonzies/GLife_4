@@ -542,7 +542,7 @@ class _HomePageState extends State<HomePage>
           ),
           Positioned(
             right: 10,
-            top: 10,
+            top: 60,
             child: Builder(
               builder: (context) {
                 return Container(
@@ -586,7 +586,7 @@ class _HomePageState extends State<HomePage>
           ),
           Positioned(
             right: 10,
-            top: 60,
+            top: 100,
             child: Builder(
               builder: (context) {
                 _loadCoins();
