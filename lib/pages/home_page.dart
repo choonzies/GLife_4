@@ -26,7 +26,6 @@ class _HomePageState extends State<HomePage>
   late User? user;
   int noSteps = 0; // Variable to hold today's step count
   int noExercise = 0; // Variable to hold today's exercise count
-  final TextEditingController _textController = TextEditingController();
 
   // Define state variables for character's gear image URLs
   String _baseImageUrl = 'assets/images/c2.jpg'; // Example initial image
@@ -204,7 +203,14 @@ class _HomePageState extends State<HomePage>
   Future<void> _loadCoins() async {
     SharedPreferences prefs = await SharedPreferences.getInstance();
     setState(() {
-      coins = prefs.getInt('coins') ?? 0;
+      int? storedCoins = prefs.getInt('coins');
+
+      if (storedCoins == null) {
+        coins = 100; 
+        prefs.setInt('coins', coins);
+      } else {
+        coins = storedCoins;
+      }
     });
   }
 
@@ -296,13 +302,14 @@ class _HomePageState extends State<HomePage>
   }
 
   void _showChangeGoalDialog(String title, String labelText) {
+    TextEditingController ctrller = TextEditingController();
     showDialog(
       context: context,
       builder: (BuildContext context) {
         return AlertDialog(
           title: Text(title),
           content: TextField(
-            controller: _textController,
+            controller: ctrller,
             keyboardType: TextInputType.number,
             decoration: InputDecoration(labelText: labelText),
           ),
@@ -312,9 +319,9 @@ class _HomePageState extends State<HomePage>
               onPressed: () {
                 setState(() {
                   if (title == 'Change Steps Goal') {
-                    goalSteps = int.parse(_textController.text);
+                    goalSteps = int.parse(ctrller.text);
                   } else if (title == 'Change Exercise Goal') {
-                    goalExercise = int.parse(_textController.text);
+                    goalExercise = int.parse(ctrller.text);
                   }
                   _saveGoals(); // Save the new goals
                 });
@@ -659,18 +666,18 @@ class _HomePageState extends State<HomePage>
         ),
         actions: [
           IconButton(
-            icon: Icon(Icons.directions_run),
+            icon: Icon(Icons.do_not_step),
             onPressed: () {
               _showChangeGoalDialog(
-                  'Change Exercise Goal', 'Enter new exercise goal');
+                  'Change Steps Goal', 'Enter new steps goal');
             },
           ),
           SizedBox(width: 10),
           IconButton(
-            icon: Icon(Icons.track_changes),
+            icon: Icon(Icons.directions_run),
             onPressed: () {
               _showChangeGoalDialog(
-                  'Change Steps Goal', 'Enter new steps goal');
+                  'Change Exercise Goal', 'Enter new exercise goal');
             },
           ),
         ],
@@ -1147,7 +1154,7 @@ class _HomePageState extends State<HomePage>
     // Update Firestore
     FirebaseAuth auth = FirebaseAuth.instance;
     User? user = auth.currentUser;
-return;
+    return;
     if (user != null) {
       try {
         await _firestore
@@ -1188,7 +1195,7 @@ return;
     FirebaseAuth auth = FirebaseAuth.instance;
     User? user = auth.currentUser;
 
-return;
+    return;
     if (user != null) {
       try {
         await _firestore
