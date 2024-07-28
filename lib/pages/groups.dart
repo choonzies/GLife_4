@@ -13,19 +13,18 @@ class Groups extends StatefulWidget {
 class _GroupsState extends State<Groups> {
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
 
-  String username = '';  
+  String username = '';
   String groupName = '';
-  
+
   List<dynamic> friends = [];
   List<dynamic> selectedFriends = [];
 
   List<dynamic> groups = [];
   List<dynamic> filteredGroups = [];
   List<dynamic> groupReqs = [];
-    User? user = FirebaseAuth.instance.currentUser;
+  User? user = FirebaseAuth.instance.currentUser;
 
-
-Future<String?> getUidByUsername(String username) async {
+  Future<String?> getUidByUsername(String username) async {
     String? uid;
 
     try {
@@ -65,10 +64,10 @@ Future<String?> getUidByUsername(String username) async {
     }
   }
 
-
   Future<void> fetchFriends() async {
     try {
-      DocumentSnapshot userDoc = await _firestore.collection('users').doc(user!.uid).get();
+      DocumentSnapshot userDoc =
+          await _firestore.collection('users').doc(user!.uid).get();
       if (userDoc.exists) {
         setState(() {
           friends = userDoc.get('friends') ?? [];
@@ -83,7 +82,8 @@ Future<String?> getUidByUsername(String username) async {
 
   Future<void> fetchGroups() async {
     try {
-      DocumentSnapshot userDoc = await _firestore.collection('users').doc(user!.uid).get();
+      DocumentSnapshot userDoc =
+          await _firestore.collection('users').doc(user!.uid).get();
       if (userDoc.exists) {
         setState(() {
           groups = userDoc.get('groups') ?? [];
@@ -99,7 +99,8 @@ Future<String?> getUidByUsername(String username) async {
 
   Future<void> fetchGroupReqs() async {
     try {
-      DocumentSnapshot userDoc = await _firestore.collection('users').doc(user!.uid).get();
+      DocumentSnapshot userDoc =
+          await _firestore.collection('users').doc(user!.uid).get();
       if (userDoc.exists) {
         setState(() {
           groupReqs = userDoc.get('groupReqs') ?? [];
@@ -112,7 +113,8 @@ Future<String?> getUidByUsername(String username) async {
     }
   }
 
-  Future<void> deleteFieldListItem(String collection, String document, String field, String item) async {
+  Future<void> deleteFieldListItem(
+      String collection, String document, String field, String item) async {
     try {
       await _firestore.collection(collection).doc(user!.uid).update({
         field: FieldValue.arrayRemove([item]),
@@ -123,7 +125,8 @@ Future<String?> getUidByUsername(String username) async {
     }
   }
 
-  Future<void> addFieldListItem(String collection, String document, String field, String item) async {
+  Future<void> addFieldListItem(
+      String collection, String document, String field, String item) async {
     try {
       await _firestore.collection(collection).doc(document).update({
         field: FieldValue.arrayUnion([item]),
@@ -222,36 +225,35 @@ Future<String?> getUidByUsername(String username) async {
 
   void _getGroupName(BuildContext context) {
     showDialog(
-      context: context,
-      builder: (BuildContext context) {
-        return AlertDialog(
-          title: Text('Enter Group Name'),
-          content: TextField(
-            onChanged: (value) {
-              groupName = value;
-            },
-            decoration: InputDecoration(
-              hintText: 'Group Name',
-            ),
-          ),
-          actions: <Widget>[
-            TextButton(
-              child: Text('Next'),
-              onPressed: () {
-                Navigator.of(context).pop(groupName);
-                _showConfirmationDialog(context, groupName);
+        context: context,
+        builder: (BuildContext context) {
+          return AlertDialog(
+            title: Text('Enter Group Name'),
+            content: TextField(
+              onChanged: (value) {
+                groupName = value;
               },
+              decoration: InputDecoration(
+                hintText: 'Group Name',
+              ),
             ),
-            TextButton(
-              child: Text('Cancel'),
-              onPressed: () {
-                Navigator.of(context).pop();
-              },
-            ),
-          ],
-        );
-      }
-    );
+            actions: <Widget>[
+              TextButton(
+                child: Text('Next'),
+                onPressed: () {
+                  Navigator.of(context).pop(groupName);
+                  _showConfirmationDialog(context, groupName);
+                },
+              ),
+              TextButton(
+                child: Text('Cancel'),
+                onPressed: () {
+                  Navigator.of(context).pop();
+                },
+              ),
+            ],
+          );
+        });
   }
 
   void _showConfirmationDialog(BuildContext context, String groupName) {
@@ -260,7 +262,8 @@ Future<String?> getUidByUsername(String username) async {
       builder: (BuildContext context) {
         return AlertDialog(
           title: const Text('Confirm Group Creation'),
-          content: Text('Are you sure you want to create $groupName with ${selectedFriends.length} friends?'),
+          content: Text(
+              'Are you sure you want to create $groupName with ${selectedFriends.length} friends?'),
           actions: <Widget>[
             TextButton(
               child: const Text('Create'),
@@ -279,8 +282,8 @@ Future<String?> getUidByUsername(String username) async {
         );
       },
     ).then((_) {
-        setState(() {});
-      });
+      setState(() {});
+    });
   }
 
   void _createGroup(String groupName) async {
@@ -298,7 +301,7 @@ Future<String?> getUidByUsername(String username) async {
       groups.add(groupName);
     });
   }
-  
+
   void _showGroupRequestsDialog() {
     final scaffold = ScaffoldMessenger.of(context);
     showDialog(
@@ -322,10 +325,13 @@ Future<String?> getUidByUsername(String username) async {
                           IconButton(
                             icon: const Icon(Icons.check),
                             onPressed: () async {
-                              await addFieldListItem('users', user!.uid, 'groups', groupReqs[index]);
-                              await deleteFieldListItem('users', user!.uid, 'groupReqs', groupReqs[index]);
-                            
-                              await addFieldListItem('groups', groupReqs[index], 'members', username);
+                              await addFieldListItem('users', user!.uid,
+                                  'groups', groupReqs[index]);
+                              await deleteFieldListItem('users', user!.uid,
+                                  'groupReqs', groupReqs[index]);
+
+                              await addFieldListItem('groups', groupReqs[index],
+                                  'members', username);
                               setState(() {
                                 groups.add(groupReqs[index]);
                                 filteredGroups.add(groupReqs[index]);
@@ -342,7 +348,8 @@ Future<String?> getUidByUsername(String username) async {
                           IconButton(
                             icon: const Icon(Icons.close),
                             onPressed: () async {
-                              await deleteFieldListItem('users', user!.uid, 'groupReqs', groupReqs[index]);
+                              await deleteFieldListItem('users', user!.uid,
+                                  'groupReqs', groupReqs[index]);
                               setState(() {
                                 groupReqs.removeAt(index);
                               });
@@ -375,43 +382,38 @@ Future<String?> getUidByUsername(String username) async {
     );
   }
 
-Widget _buildGroupsList() {
+  Widget _buildGroupsList() {
     return Expanded(
       child: ListView.builder(
         itemCount: groups.length,
         itemBuilder: (context, index) {
           String group = groups[index];
           return GestureDetector(
-            onTap:  () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(builder: (context) => GroupDetails(
-                  group,
-                  username,
-                  () {
-                    setState(() {
-                      groups.remove(group);
-                    });
-                  }))
-              );
-            },
-            child: Container(
-              margin: EdgeInsets.fromLTRB(10, 5, 10, 5),
-              padding: EdgeInsets.all(16),
-              decoration: BoxDecoration(
-                color: Color(0xFFF1F4F8),
-                borderRadius: BorderRadius.circular(24),
-              ),
-              child: Text(
-                group,
-                style: TextStyle(
-                  color: Color(0xFF101213),
-                  fontSize: 18,
-                  fontWeight: FontWeight.w600,
-                ),
-              )
-            )
-          );
+              onTap: () {
+                Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                        builder: (context) => GroupDetails(group, username, () {
+                              setState(() {
+                                groups.remove(group);
+                              });
+                            })));
+              },
+              child: Container(
+                  margin: EdgeInsets.fromLTRB(10, 5, 10, 5),
+                  padding: EdgeInsets.all(16),
+                  decoration: BoxDecoration(
+                    color: Color(0xFFF1F4F8),
+                    borderRadius: BorderRadius.circular(24),
+                  ),
+                  child: Text(
+                    group,
+                    style: TextStyle(
+                      color: Color(0xFF101213),
+                      fontSize: 18,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  )));
         },
       ),
     );
@@ -465,8 +467,4 @@ Widget _buildGroupsList() {
       ),
     );
   }
-
-
-
-  
 }

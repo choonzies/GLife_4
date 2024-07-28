@@ -21,9 +21,7 @@ class _AccessoriesPageState extends State<AccessoriesPage> {
 
   Map<String, String> _accessoryImages = {
     'THE OG HELMET': 'assets/images/helmet.jpg',
- 
     'THE OG CHESTPLATE': 'assets/images/testchest.jpg',
-
   };
 
   Map<String, List<String>> _accessoryOptions = {
@@ -58,10 +56,14 @@ class _AccessoriesPageState extends State<AccessoriesPage> {
       _selectedLeggings = prefs.getString('Leggings');
       _selectedBoots = prefs.getString('Boots');
 
-      _selectedIndices['Hat'] = _accessoryOptions['Hat']!.indexOf(_selectedHat ?? 'None');
-      _selectedIndices['Chest'] = _accessoryOptions['Chest']!.indexOf(_selectedChest ?? 'None');
-      _selectedIndices['Leggings'] = _accessoryOptions['Leggings']!.indexOf(_selectedLeggings ?? 'None');
-      _selectedIndices['Boots'] = _accessoryOptions['Boots']!.indexOf(_selectedBoots ?? 'None');
+      _selectedIndices['Hat'] =
+          _accessoryOptions['Hat']!.indexOf(_selectedHat ?? 'None');
+      _selectedIndices['Chest'] =
+          _accessoryOptions['Chest']!.indexOf(_selectedChest ?? 'None');
+      _selectedIndices['Leggings'] =
+          _accessoryOptions['Leggings']!.indexOf(_selectedLeggings ?? 'None');
+      _selectedIndices['Boots'] =
+          _accessoryOptions['Boots']!.indexOf(_selectedBoots ?? 'None');
     });
   }
 
@@ -75,10 +77,14 @@ class _AccessoriesPageState extends State<AccessoriesPage> {
   Future<void> _loadOwnedItems() async {
     SharedPreferences prefs = await SharedPreferences.getInstance();
     setState(() {
-      _accessoryOptions['Hat'] = ['None'] + (prefs.getStringList('ownedHelmets') ?? []);
-      _accessoryOptions['Chest'] = ['None'] + (prefs.getStringList('ownedChestplates') ?? []);
-      _accessoryOptions['Leggings'] = ['None'] + (prefs.getStringList('ownedLeggings') ?? []);
-      _accessoryOptions['Boots'] = ['None'] + (prefs.getStringList('ownedBoots') ?? []);
+      _accessoryOptions['Hat'] =
+          ['None'] + (prefs.getStringList('ownedHelmets') ?? []);
+      _accessoryOptions['Chest'] =
+          ['None'] + (prefs.getStringList('ownedChestplates') ?? []);
+      _accessoryOptions['Leggings'] =
+          ['None'] + (prefs.getStringList('ownedLeggings') ?? []);
+      _accessoryOptions['Boots'] =
+          ['None'] + (prefs.getStringList('ownedBoots') ?? []);
     });
   }
 
@@ -87,7 +93,8 @@ class _AccessoriesPageState extends State<AccessoriesPage> {
     await prefs.setString(key, value);
   }
 
-  Widget buildAccessoryCard(String title, String? selectedValue, List<String> options, ValueChanged<String?> onChanged, int initialIndex) {
+  Widget buildAccessoryCard(String title, String? selectedValue,
+      List<String> options, ValueChanged<String?> onChanged, int initialIndex) {
     return Card(
       elevation: 5,
       color: Colors.white,
@@ -117,7 +124,11 @@ class _AccessoriesPageState extends State<AccessoriesPage> {
             children: [
               Text(
                 '$title',
-                style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.black, fontFamily: 'Raleway'),
+                style: TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.black,
+                    fontFamily: 'Raleway'),
               ),
               CarouselSlider(
                 options: CarouselOptions(
@@ -156,7 +167,10 @@ class _AccessoriesPageState extends State<AccessoriesPage> {
                                 )
                               : Text(
                                   'None',
-                                  style: TextStyle(fontSize: 16.0, color: Colors.black, fontFamily: 'Raleway'),
+                                  style: TextStyle(
+                                      fontSize: 16.0,
+                                      color: Colors.black,
+                                      fontFamily: 'Raleway'),
                                 ),
                         ),
                       );
@@ -166,10 +180,13 @@ class _AccessoriesPageState extends State<AccessoriesPage> {
               ),
               SizedBox(height: 10),
               Text(
-                selectedValue != null && selectedValue.isNotEmpty && selectedValue != 'None'
+                selectedValue != null &&
+                        selectedValue.isNotEmpty &&
+                        selectedValue != 'None'
                     ? 'Equipped: $selectedValue'
                     : 'Not equipped',
-                style: TextStyle(fontSize: 14, color: Colors.black, fontFamily: 'Raleway'),
+                style: TextStyle(
+                    fontSize: 14, color: Colors.black, fontFamily: 'Raleway'),
               ),
             ],
           ),
@@ -182,7 +199,9 @@ class _AccessoriesPageState extends State<AccessoriesPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text('Accessories', style: TextStyle(fontFamily: 'Raleway', fontWeight: FontWeight.bold)),
+        title: Text('Accessories',
+            style:
+                TextStyle(fontFamily: 'Raleway', fontWeight: FontWeight.bold)),
         backgroundColor: Colors.transparent,
         elevation: 0,
         flexibleSpace: Container(
@@ -214,7 +233,9 @@ class _AccessoriesPageState extends State<AccessoriesPage> {
                   height: 300,
                   fit: BoxFit.contain,
                 ),
-                if (_selectedHat != null && _selectedHat != 'None' && _accessoryImages.containsKey(_selectedHat))
+                if (_selectedHat != null &&
+                    _selectedHat != 'None' &&
+                    _accessoryImages.containsKey(_selectedHat))
                   Positioned(
                     top: -40,
                     left: -50,
@@ -225,7 +246,9 @@ class _AccessoriesPageState extends State<AccessoriesPage> {
                       fit: BoxFit.contain,
                     ),
                   ),
-                if (_selectedChest != null && _selectedChest != 'None' && _accessoryImages.containsKey(_selectedChest))
+                if (_selectedChest != null &&
+                    _selectedChest != 'None' &&
+                    _accessoryImages.containsKey(_selectedChest))
                   Positioned(
                     top: -40,
                     left: -50,
@@ -236,7 +259,9 @@ class _AccessoriesPageState extends State<AccessoriesPage> {
                       fit: BoxFit.contain,
                     ),
                   ),
-                if (_selectedLeggings != null && _selectedLeggings != 'None' && _accessoryImages.containsKey(_selectedLeggings))
+                if (_selectedLeggings != null &&
+                    _selectedLeggings != 'None' &&
+                    _accessoryImages.containsKey(_selectedLeggings))
                   Positioned(
                     top: 190,
                     left: 50,
@@ -247,7 +272,9 @@ class _AccessoriesPageState extends State<AccessoriesPage> {
                       fit: BoxFit.contain,
                     ),
                   ),
-                if (_selectedBoots != null && _selectedBoots != 'None' && _accessoryImages.containsKey(_selectedBoots))
+                if (_selectedBoots != null &&
+                    _selectedBoots != 'None' &&
+                    _accessoryImages.containsKey(_selectedBoots))
                   Positioned(
                     top: 280,
                     left: 50,
@@ -263,7 +290,10 @@ class _AccessoriesPageState extends State<AccessoriesPage> {
             SizedBox(height: 16),
             Text(
               'Coins: $coins',
-              style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, fontFamily: 'Raleway'),
+              style: TextStyle(
+                  fontSize: 20,
+                  fontWeight: FontWeight.bold,
+                  fontFamily: 'Raleway'),
             ),
             SizedBox(height: 16),
             Expanded(
@@ -272,37 +302,48 @@ class _AccessoriesPageState extends State<AccessoriesPage> {
                   padding: const EdgeInsets.all(8.0),
                   child: Column(
                     children: [
-                      buildAccessoryCard('Hat', _selectedHat, _accessoryOptions['Hat']!, (String? newValue) {
+                      buildAccessoryCard(
+                          'Hat', _selectedHat, _accessoryOptions['Hat']!,
+                          (String? newValue) {
                         setState(() {
                           _selectedHat = newValue!;
-                          _selectedIndices['Hat'] = _accessoryOptions['Hat']!.indexOf(newValue);
+                          _selectedIndices['Hat'] =
+                              _accessoryOptions['Hat']!.indexOf(newValue);
                         });
                         _saveSelection('Hat', newValue!);
                         _updateCharacter();
                       }, _selectedIndices['Hat']!),
                       Divider(),
-                      buildAccessoryCard('Chest', _selectedChest, _accessoryOptions['Chest']!, (String? newValue) {
+                      buildAccessoryCard(
+                          'Chest', _selectedChest, _accessoryOptions['Chest']!,
+                          (String? newValue) {
                         setState(() {
                           _selectedChest = newValue!;
-                          _selectedIndices['Chest'] = _accessoryOptions['Chest']!.indexOf(newValue);
+                          _selectedIndices['Chest'] =
+                              _accessoryOptions['Chest']!.indexOf(newValue);
                         });
                         _saveSelection('Chest', newValue!);
                         _updateCharacter();
                       }, _selectedIndices['Chest']!),
                       Divider(),
-                      buildAccessoryCard('Leggings', _selectedLeggings, _accessoryOptions['Leggings']!, (String? newValue) {
+                      buildAccessoryCard('Leggings', _selectedLeggings,
+                          _accessoryOptions['Leggings']!, (String? newValue) {
                         setState(() {
                           _selectedLeggings = newValue!;
-                          _selectedIndices['Leggings'] = _accessoryOptions['Leggings']!.indexOf(newValue);
+                          _selectedIndices['Leggings'] =
+                              _accessoryOptions['Leggings']!.indexOf(newValue);
                         });
                         _saveSelection('Leggings', newValue!);
                         _updateCharacter();
                       }, _selectedIndices['Leggings']!),
                       Divider(),
-                      buildAccessoryCard('Boots', _selectedBoots, _accessoryOptions['Boots']!, (String? newValue) {
+                      buildAccessoryCard(
+                          'Boots', _selectedBoots, _accessoryOptions['Boots']!,
+                          (String? newValue) {
                         setState(() {
                           _selectedBoots = newValue!;
-                          _selectedIndices['Boots'] = _accessoryOptions['Boots']!.indexOf(newValue);
+                          _selectedIndices['Boots'] =
+                              _accessoryOptions['Boots']!.indexOf(newValue);
                         });
                         _saveSelection('Boots', newValue!);
                         _updateCharacter();
@@ -322,16 +363,24 @@ class _AccessoriesPageState extends State<AccessoriesPage> {
 
   void _updateCharacter() {
     widget.onUpdateCharacter({
-      'Hat': _selectedHat != null && _selectedHat!.isNotEmpty && _selectedHat != 'None'
+      'Hat': _selectedHat != null &&
+              _selectedHat!.isNotEmpty &&
+              _selectedHat != 'None'
           ? _accessoryImages[_selectedHat!] ?? ''
           : '',
-      'Chest': _selectedChest != null && _selectedChest!.isNotEmpty && _selectedChest != 'None'
+      'Chest': _selectedChest != null &&
+              _selectedChest!.isNotEmpty &&
+              _selectedChest != 'None'
           ? _accessoryImages[_selectedChest!] ?? ''
           : '',
-      'Leggings': _selectedLeggings != null && _selectedLeggings!.isNotEmpty && _selectedLeggings != 'None'
+      'Leggings': _selectedLeggings != null &&
+              _selectedLeggings!.isNotEmpty &&
+              _selectedLeggings != 'None'
           ? _accessoryImages[_selectedLeggings!] ?? ''
           : '',
-      'Boots': _selectedBoots != null && _selectedBoots!.isNotEmpty && _selectedBoots != 'None'
+      'Boots': _selectedBoots != null &&
+              _selectedBoots!.isNotEmpty &&
+              _selectedBoots != 'None'
           ? _accessoryImages[_selectedBoots!] ?? ''
           : '',
     });

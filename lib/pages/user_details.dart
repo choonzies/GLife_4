@@ -75,149 +75,151 @@ class UserDetails extends StatelessWidget {
   }
 
   @override
-
-Widget build(BuildContext context) {
-  return Scaffold(
-    appBar: AppBar(
-      backgroundColor: Colors.green,
-      title: Text('User Details'),
-      flexibleSpace: Container(
-        decoration: BoxDecoration(
-          gradient: LinearGradient(
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-            colors: <Color>[Colors.green, Colors.blue],
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        backgroundColor: Colors.green,
+        title: Text('User Details'),
+        flexibleSpace: Container(
+          decoration: BoxDecoration(
+            gradient: LinearGradient(
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+              colors: <Color>[Colors.green, Colors.blue],
+            ),
           ),
         ),
       ),
-    ),
-    body: Container(
-      decoration: BoxDecoration(
-        gradient: LinearGradient(
-          colors: [Colors.green.shade200, Colors.blue.shade400],
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
+      body: Container(
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            colors: [Colors.green.shade200, Colors.blue.shade400],
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+          ),
         ),
-      ),
-      child: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              username,
-              style: TextStyle(
-                color: Colors.black,
-                fontSize: 30,
-                fontWeight: FontWeight.bold,
-                shadows: [
-                  Shadow(
-                    color: Colors.black.withOpacity(0.2),
-                    offset: Offset(1, 1),
-                    blurRadius: 2,
-                  ),
-                ],
-              ),
-            ),
-            SizedBox(height: 20),
-            Expanded(
-              child: Container(
-                width: double.infinity,
-                decoration: BoxDecoration(
-                  color: Color.fromARGB(255, 242, 245, 244),
-                  borderRadius: BorderRadius.circular(16),
-                  boxShadow: [
-                    BoxShadow(
-                      blurRadius: 10,
-                      color: Colors.black.withOpacity(0.1),
-                      offset: Offset(0, 3),
+        child: Padding(
+          padding: const EdgeInsets.all(16.0),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                username,
+                style: TextStyle(
+                  color: Colors.black,
+                  fontSize: 30,
+                  fontWeight: FontWeight.bold,
+                  shadows: [
+                    Shadow(
+                      color: Colors.black.withOpacity(0.2),
+                      offset: Offset(1, 1),
+                      blurRadius: 2,
                     ),
                   ],
                 ),
-                child: SingleChildScrollView(
-                  padding: EdgeInsets.all(16),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        'Stats',
-                        style: TextStyle(
-                          color: Color(0xFF101213),
-                          fontSize: 24,
-                          fontWeight: FontWeight.w500,
-                        ),
-                      ),
-                      SizedBox(height: 16),
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          FutureBuilder<int>(
-                            future: getHighestStreaks(username),
-                            builder: (context, snapshot) {
-                              return _buildAchievementCard(
-                                context,
-                                icon: Icons.local_fire_department_sharp,
-                                value: snapshot.connectionState == ConnectionState.waiting
-                                    ? 'Loading...'
-                                    : snapshot.hasError
-                                        ? 'Error'
-                                        : snapshot.data.toString(),
-                                label: 'Highest Streaks',
-                              );
-                            },
-                          ),
-                        ],
-                      ),
-                      SizedBox(height: 16),
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          FutureBuilder<int>(
-                            future: getSteps(username),
-                            builder: (context, snapshot) {
-                              return _buildAchievementCard(
-                                context,
-                                icon: Icons.directions_walk,
-                                value: snapshot.connectionState == ConnectionState.waiting
-                                    ? 'Loading...'
-                                    : snapshot.hasError
-                                        ? 'Error'
-                                        : snapshot.data.toString(),
-                                label: 'Total Steps',
-                              );
-                            },
-                          ),
-                          FutureBuilder<int>(
-                            future: getCalories(username),
-                            builder: (context, snapshot) {
-                              return _buildAchievementCard(
-                                context,
-                                icon: Icons.fitness_center,
-                                value: snapshot.connectionState == ConnectionState.waiting
-                                    ? 'Loading...'
-                                    : snapshot.hasError
-                                        ? 'Error'
-                                        : snapshot.data.toString(),
-                                label: 'Total Calories',
-                              );
-                            },
-                          ),
-                        ],
+              ),
+              SizedBox(height: 20),
+              Expanded(
+                child: Container(
+                  width: double.infinity,
+                  decoration: BoxDecoration(
+                    color: Color.fromARGB(255, 242, 245, 244),
+                    borderRadius: BorderRadius.circular(16),
+                    boxShadow: [
+                      BoxShadow(
+                        blurRadius: 10,
+                        color: Colors.black.withOpacity(0.1),
+                        offset: Offset(0, 3),
                       ),
                     ],
                   ),
+                  child: SingleChildScrollView(
+                    padding: EdgeInsets.all(16),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          'Stats',
+                          style: TextStyle(
+                            color: Color(0xFF101213),
+                            fontSize: 24,
+                            fontWeight: FontWeight.w500,
+                          ),
+                        ),
+                        SizedBox(height: 16),
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            FutureBuilder<int>(
+                              future: getHighestStreaks(username),
+                              builder: (context, snapshot) {
+                                return _buildAchievementCard(
+                                  context,
+                                  icon: Icons.local_fire_department_sharp,
+                                  value: snapshot.connectionState ==
+                                          ConnectionState.waiting
+                                      ? 'Loading...'
+                                      : snapshot.hasError
+                                          ? 'Error'
+                                          : snapshot.data.toString(),
+                                  label: 'Highest Streaks',
+                                );
+                              },
+                            ),
+                          ],
+                        ),
+                        SizedBox(height: 16),
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            FutureBuilder<int>(
+                              future: getSteps(username),
+                              builder: (context, snapshot) {
+                                return _buildAchievementCard(
+                                  context,
+                                  icon: Icons.directions_walk,
+                                  value: snapshot.connectionState ==
+                                          ConnectionState.waiting
+                                      ? 'Loading...'
+                                      : snapshot.hasError
+                                          ? 'Error'
+                                          : snapshot.data.toString(),
+                                  label: 'Total Steps',
+                                );
+                              },
+                            ),
+                            FutureBuilder<int>(
+                              future: getCalories(username),
+                              builder: (context, snapshot) {
+                                return _buildAchievementCard(
+                                  context,
+                                  icon: Icons.fitness_center,
+                                  value: snapshot.connectionState ==
+                                          ConnectionState.waiting
+                                      ? 'Loading...'
+                                      : snapshot.hasError
+                                          ? 'Error'
+                                          : snapshot.data.toString(),
+                                  label: 'Total Calories',
+                                );
+                              },
+                            ),
+                          ],
+                        ),
+                      ],
+                    ),
+                  ),
                 ),
               ),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
-    ),
-  );
-}
+    );
+  }
 
-
-  Widget _buildAchievementCard(BuildContext context, {required IconData icon, required String value, required String label}) {
+  Widget _buildAchievementCard(BuildContext context,
+      {required IconData icon, required String value, required String label}) {
     return Expanded(
       child: Card(
         elevation: 4,

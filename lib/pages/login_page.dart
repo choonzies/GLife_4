@@ -22,7 +22,8 @@ class _LoginPageState extends State<LoginPage> {
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
 
   Future<void> checkFirstLogin(String userId) async {
-    DocumentSnapshot userDoc = await _firestore.collection('users').doc(userId).get();
+    DocumentSnapshot userDoc =
+        await _firestore.collection('users').doc(userId).get();
     if (!userDoc.exists) {
       // Store user email and username
       await _firestore.collection('users').doc(userId).set({
@@ -70,7 +71,8 @@ class _LoginPageState extends State<LoginPage> {
         return;
       }
 
-      UserCredential userCredential = await Auth().createUserWithEmailAndPassword(
+      UserCredential userCredential =
+          await Auth().createUserWithEmailAndPassword(
         email: _controllerEmail.text,
         password: _controllerPassword.text,
       );
@@ -88,14 +90,17 @@ class _LoginPageState extends State<LoginPage> {
   }
 
   Widget _title() {
-    return const Text('GLife', style: TextStyle(color: Colors.green, fontSize: 28, fontWeight: FontWeight.bold));
+    return const Text('GLife',
+        style: TextStyle(
+            color: Colors.green, fontSize: 28, fontWeight: FontWeight.bold));
   }
 
   Widget _logo() {
     return Image.asset('assets/images/logo.jpeg', height: 150);
   }
 
-  Widget _entryField(String title, TextEditingController controller, bool isPassword) {
+  Widget _entryField(
+      String title, TextEditingController controller, bool isPassword) {
     return TextFormField(
       controller: controller,
       obscureText: isPassword && !isPasswordVisible,
@@ -106,7 +111,9 @@ class _LoginPageState extends State<LoginPage> {
         fillColor: Colors.green[50],
         suffixIcon: isPassword
             ? IconButton(
-                icon: Icon(isPasswordVisible ? Icons.visibility : Icons.visibility_off),
+                icon: Icon(isPasswordVisible
+                    ? Icons.visibility
+                    : Icons.visibility_off),
                 onPressed: () {
                   setState(() {
                     isPasswordVisible = !isPasswordVisible;
@@ -119,12 +126,14 @@ class _LoginPageState extends State<LoginPage> {
   }
 
   Widget _errorMessage() {
-    return Text(errorMessage == '' ? '' : errorMessage!, style: TextStyle(color: Colors.red));
+    return Text(errorMessage == '' ? '' : errorMessage!,
+        style: TextStyle(color: Colors.red));
   }
 
   Widget _submitButton() {
     return ElevatedButton(
-      onPressed: isLogin ? signInWithEmailAndPassword : createUserWithEmailAndPassword,
+      onPressed:
+          isLogin ? signInWithEmailAndPassword : createUserWithEmailAndPassword,
       child: Text(isLogin ? 'Login' : 'Register'),
     );
   }

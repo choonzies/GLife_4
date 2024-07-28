@@ -11,7 +11,8 @@ class ActiveEnergyChartPage extends StatefulWidget {
 }
 
 class _ActiveEnergyChartPageState extends State<ActiveEnergyChartPage> {
-  PageController _pageController = PageController(initialPage: 0, keepPage: true);
+  PageController _pageController =
+      PageController(initialPage: 0, keepPage: true);
   Map<int, List<BarChartGroupData>> cachedBarGroups = {};
   Map<int, List<String>> cachedWeekDays = {};
   int currentWeekIndex = 0;
@@ -37,7 +38,8 @@ class _ActiveEnergyChartPageState extends State<ActiveEnergyChartPage> {
     }
 
     var now = DateTime.now();
-    var startOfWeek = now.subtract(Duration(days: now.weekday - 1 + 7 * weekIndex));
+    var startOfWeek =
+        now.subtract(Duration(days: now.weekday - 1 + 7 * weekIndex));
     List<BarChartGroupData> tempBarGroups = [];
     List<String> tempWeekDays = [];
 
@@ -46,7 +48,8 @@ class _ActiveEnergyChartPageState extends State<ActiveEnergyChartPage> {
       var midnight = DateTime(day.year, day.month, day.day);
 
       try {
-        List<HealthDataPoint> healthData = await Health().getHealthDataFromTypes(
+        List<HealthDataPoint> healthData =
+            await Health().getHealthDataFromTypes(
           startTime: midnight,
           endTime: midnight.add(Duration(days: 1)),
           types: types,
@@ -106,7 +109,8 @@ class _ActiveEnergyChartPageState extends State<ActiveEnergyChartPage> {
 
   String getDateRange(int weekIndex) {
     var now = DateTime.now();
-    var startOfWeek = now.subtract(Duration(days: now.weekday - 1 + 7 * weekIndex));
+    var startOfWeek =
+        now.subtract(Duration(days: now.weekday - 1 + 7 * weekIndex));
     var endOfWeek = startOfWeek.add(Duration(days: 6));
     return '${DateFormat.yMMMd().format(startOfWeek)} - ${DateFormat.yMMMd().format(endOfWeek)}';
   }
@@ -123,7 +127,8 @@ class _ActiveEnergyChartPageState extends State<ActiveEnergyChartPage> {
             : Column(
                 children: [
                   Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 24.0, vertical: 16.0),
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 24.0, vertical: 16.0),
                     child: Container(
                       decoration: BoxDecoration(
                         borderRadius: BorderRadius.circular(12),
@@ -235,7 +240,8 @@ class _ActiveEnergyChartPageState extends State<ActiveEnergyChartPage> {
                                     showTitles: true,
                                     getTitlesWidget: (value, meta) {
                                       return Padding(
-                                        padding: const EdgeInsets.only(top: 8.0),
+                                        padding:
+                                            const EdgeInsets.only(top: 8.0),
                                         child: Text(
                                           cachedWeekDays[index]![value.toInt()],
                                           style: TextStyle(
@@ -304,11 +310,16 @@ class _ActiveEnergyChartPageState extends State<ActiveEnergyChartPage> {
                                       selectedDate = '';
                                       return;
                                     }
-                                    touchedIndex = barTouchResponse.spot!.touchedBarGroupIndex;
+                                    touchedIndex = barTouchResponse
+                                        .spot!.touchedBarGroupIndex;
                                     var startOfWeek = DateTime.now().subtract(
-                                        Duration(days: DateTime.now().weekday - 1 + 7 * currentWeekIndex));
+                                        Duration(
+                                            days: DateTime.now().weekday -
+                                                1 +
+                                                7 * currentWeekIndex));
                                     selectedDate = DateFormat.yMMMd().format(
-                                        startOfWeek.add(Duration(days: touchedIndex)));
+                                        startOfWeek
+                                            .add(Duration(days: touchedIndex)));
                                   });
                                 },
                               ),

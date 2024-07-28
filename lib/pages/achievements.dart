@@ -1,10 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
-
-
-
-
 class AchievementsPage extends StatefulWidget {
   @override
   _AchievementsPageState createState() => _AchievementsPageState();
@@ -33,15 +29,14 @@ class _AchievementsPageState extends State<AchievementsPage> {
       highestStreak = prefs.getInt('highestStreak') ?? 0;
       totalCalories = prefs.getInt('totalCalories') ?? 0;
       coins = prefs.getInt('coins') ?? 0;
-      hasChestplate = (prefs.getStringList('ownedChestplates') ?? []).isNotEmpty;
+      hasChestplate =
+          (prefs.getStringList('ownedChestplates') ?? []).isNotEmpty;
       baseImageChanged = (prefs.getString('baseImageUrl') ?? '').isNotEmpty;
-      
     });
   }
 
   @override
   Widget build(BuildContext context) {
-    
     return Scaffold(
       appBar: AppBar(
         title: Text('Achievements'),
@@ -75,7 +70,7 @@ class _AchievementsPageState extends State<AchievementsPage> {
               unlocked: totalCalories >= 10000,
             ),
             SizedBox(height: 16),
-            
+
             SizedBox(height: 16),
             AchievementCard(
               title: 'Persistent Achiever',
@@ -95,7 +90,7 @@ class _AchievementsPageState extends State<AchievementsPage> {
               unlocked: hasChestplate,
             ),
             SizedBox(height: 16),
-            
+
             // Add more AchievementCard widgets as needed
           ],
         ),

@@ -27,7 +27,8 @@ class _ProfilePageState extends State<ProfilePage> {
 
   Future<void> _fetchUsername() async {
     try {
-      DocumentSnapshot userDoc = await _firestore.collection('users').doc(_user!.uid).get();
+      DocumentSnapshot userDoc =
+          await _firestore.collection('users').doc(_user!.uid).get();
       setState(() {
         _username = userDoc['username'];
       });
@@ -36,14 +37,16 @@ class _ProfilePageState extends State<ProfilePage> {
     }
   }
 
-  Future<void> _changePassword(String currentPassword, String newPassword) async {
+  Future<void> _changePassword(
+      String currentPassword, String newPassword) async {
     setState(() {
       _isUpdatingPassword = true;
     });
 
     try {
       // Reauthenticate user with current password
-      AuthCredential credential = EmailAuthProvider.credential(email: _user!.email!, password: currentPassword);
+      AuthCredential credential = EmailAuthProvider.credential(
+          email: _user!.email!, password: currentPassword);
       await _user!.reauthenticateWithCredential(credential);
 
       // Update password
@@ -123,19 +126,23 @@ class _ProfilePageState extends State<ProfilePage> {
                 : Center(
                     child: ElevatedButton(
                       onPressed: () {
-                        if (_passwordController.text.isEmpty || _newPasswordController.text.isEmpty) {
+                        if (_passwordController.text.isEmpty ||
+                            _newPasswordController.text.isEmpty) {
                           ScaffoldMessenger.of(context).showSnackBar(
                             SnackBar(
-                              content: Text('Please enter both current and new passwords'),
+                              content: Text(
+                                  'Please enter both current and new passwords'),
                             ),
                           );
                         } else {
-                          _changePassword(_passwordController.text.trim(), _newPasswordController.text.trim());
+                          _changePassword(_passwordController.text.trim(),
+                              _newPasswordController.text.trim());
                         }
                       },
                       child: Text('Change Password'),
                       style: ElevatedButton.styleFrom(
-                        padding: EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                        padding:
+                            EdgeInsets.symmetric(horizontal: 24, vertical: 12),
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(12),
                         ),

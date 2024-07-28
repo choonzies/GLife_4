@@ -36,7 +36,8 @@ class _StepsChartPageState extends State<StepsChartPage> {
     }
 
     var now = DateTime.now();
-    var startOfWeek = now.subtract(Duration(days: now.weekday - 1 + 7 * weekIndex));
+    var startOfWeek =
+        now.subtract(Duration(days: now.weekday - 1 + 7 * weekIndex));
     List<BarChartGroupData> tempBarGroups = [];
     List<String> tempWeekDays = [];
 
@@ -45,7 +46,8 @@ class _StepsChartPageState extends State<StepsChartPage> {
       var midnight = DateTime(day.year, day.month, day.day);
 
       try {
-        List<HealthDataPoint> healthData = await Health().getHealthDataFromTypes(
+        List<HealthDataPoint> healthData =
+            await Health().getHealthDataFromTypes(
           startTime: midnight,
           endTime: midnight.add(Duration(days: 1)),
           types: types,
@@ -106,7 +108,8 @@ class _StepsChartPageState extends State<StepsChartPage> {
 
   String getDateRange(int weekIndex) {
     var now = DateTime.now();
-    var startOfWeek = now.subtract(Duration(days: now.weekday - 1 + 7 * weekIndex));
+    var startOfWeek =
+        now.subtract(Duration(days: now.weekday - 1 + 7 * weekIndex));
     var endOfWeek = startOfWeek.add(Duration(days: 6));
     return '${DateFormat.yMMMd().format(startOfWeek)} - ${DateFormat.yMMMd().format(endOfWeek)}';
   }
@@ -123,7 +126,8 @@ class _StepsChartPageState extends State<StepsChartPage> {
             : Column(
                 children: [
                   Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 24.0, vertical: 16.0),
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 24.0, vertical: 16.0),
                     child: Container(
                       decoration: BoxDecoration(
                         borderRadius: BorderRadius.circular(12),
@@ -235,7 +239,8 @@ class _StepsChartPageState extends State<StepsChartPage> {
                                     showTitles: true,
                                     getTitlesWidget: (value, meta) {
                                       return Padding(
-                                        padding: const EdgeInsets.only(top: 8.0),
+                                        padding:
+                                            const EdgeInsets.only(top: 8.0),
                                         child: Text(
                                           cachedWeekDays[index]![value.toInt()],
                                           style: TextStyle(
@@ -308,11 +313,12 @@ class _StepsChartPageState extends State<StepsChartPage> {
                                         .spot!.touchedBarGroupIndex;
                                     var startOfWeek = DateTime.now().subtract(
                                         Duration(
-                                            days: DateTime.now().weekday - 1 +
+                                            days: DateTime.now().weekday -
+                                                1 +
                                                 7 * currentWeekIndex));
                                     selectedDate = DateFormat.yMMMd().format(
-                                        startOfWeek.add(
-                                            Duration(days: touchedIndex)));
+                                        startOfWeek
+                                            .add(Duration(days: touchedIndex)));
                                   });
                                 },
                               ),
