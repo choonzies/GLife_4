@@ -168,7 +168,7 @@ Future<int> fetchStepData() async {
     } else {
       debugPrint("Authorization not granted - error in authorization");
     }
-    //saveAndLogTotalSteps(steps);
+    saveAndLogTotalSteps(steps);
     return steps;
   }
 
@@ -223,7 +223,7 @@ Future<int> fetchActiveEnergyData() async {
   } else {
     debugPrint("Authorization not granted for active calories - error in authorization");
   }
-//saveAndLogTotalCalories(activeCalories);
+saveAndLogTotalCalories(activeCalories);
   return activeCalories;
 }
 
