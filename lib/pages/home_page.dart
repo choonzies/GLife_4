@@ -38,8 +38,8 @@ class _HomePageState extends State<HomePage>
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
   late AnimationController _controller;
   late Animation<double> _animation;
-  int goalSteps = 1000;
-  int goalExercise = 30; // Daily exercise goal in minutes
+  int goalSteps = 10000;
+  int goalExercise = 2500;
   late StreamController<int> _stepCountController;
   late StreamController<int> _exerciseCountController;
   int streak = 0;
@@ -111,7 +111,7 @@ class _HomePageState extends State<HomePage>
   }
 
   Future<int> fetchStepData() async {
-    int steps = 500;
+    SharedPreferences prefs = await SharedPreferences.getInstance();
 
     // // Get steps for today (i.e., since midnight)
     // final now = DateTime.now();
@@ -131,9 +131,15 @@ class _HomePageState extends State<HomePage>
     //     debugPrint("Exception in getTotalStepsInInterval: $error");
     //   }
 
-    //   setState(() {
-    //     noSteps = steps;
-    //   });
+    int steps = prefs.getInt('previousSteps') ?? 500;
+
+    setState(() {
+      noSteps = steps;
+    });
+
+    if (prefs.getInt('previousSteps') == null) {
+      prefs.setInt('previousSteps', steps);
+    }
 
     //   //_stepCountController.add(steps); // Add steps data to stream
     // } else {
@@ -144,7 +150,7 @@ class _HomePageState extends State<HomePage>
   }
 
   Future<int> fetchActiveEnergyData() async {
-    int activeCalories = 500;
+    SharedPreferences prefs = await SharedPreferences.getInstance();
     // var types = [HealthDataType.ACTIVE_ENERGY_BURNED];
 
     // // Get active calories for today (i.e., since midnight)
@@ -180,9 +186,16 @@ class _HomePageState extends State<HomePage>
 
     //   // Update state and stream controller with active calories data
 
-    //   setState(() {
-    //     noExercise = activeCalories;
-    //   });
+    int activeCalories = prefs.getInt('previousCalories') ?? 500;
+
+    setState(() {
+      noExercise = activeCalories;
+    });
+
+    if (prefs.getInt('previousCalories') == null) {
+      prefs.setInt('previousCalories', noExercise);
+    }
+
     //   _exerciseCountController.add(activeCalories);
     // } else {
     //   debugPrint(
@@ -206,7 +219,7 @@ class _HomePageState extends State<HomePage>
       int? storedCoins = prefs.getInt('coins');
 
       if (storedCoins == null) {
-        coins = 100; 
+        coins = 100;
         prefs.setInt('coins', coins);
       } else {
         coins = storedCoins;
@@ -589,9 +602,6 @@ class _HomePageState extends State<HomePage>
             top: 100,
             child: Builder(
               builder: (context) {
-                _loadCoins();
-                gainCoins();
-
                 return GestureDetector(
                   onTap: () {
                     Navigator.push(
@@ -625,6 +635,102 @@ class _HomePageState extends State<HomePage>
                           SizedBox(width: 8),
                           Text(
                             '$coins Coins',
+                            style: TextStyle(
+                              fontSize: 14,
+                              fontWeight: FontWeight.bold,
+                              color: Colors.white,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                );
+              },
+            ),
+          ),
+          Positioned(
+            right: 10,
+            top: 660,
+            child: Builder(
+              builder: (context) {
+                return GestureDetector(
+                  onTap: () {
+                    setState(() {
+                      noSteps += 1000;
+                      saveAndLogTotalSteps(noSteps);
+                    });
+                  },
+                  child: Container(
+                    decoration: BoxDecoration(
+                      color: Colors.green,
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black.withOpacity(0.3),
+                          spreadRadius: 2,
+                          blurRadius: 4,
+                          offset: Offset(0, 2),
+                        ),
+                      ],
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 12.0, vertical: 3.0),
+                      child: Row(
+                        children: [
+                          Icon(Icons.android, color: Colors.white, size: 24),
+                          SizedBox(width: 8),
+                          Text(
+                            'STEPS MOCKER',
+                            style: TextStyle(
+                              fontSize: 14,
+                              fontWeight: FontWeight.bold,
+                              color: Colors.white,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                );
+              },
+            ),
+          ),
+          Positioned(
+            right: 10,
+            top: 700,
+            child: Builder(
+              builder: (context) {
+                return GestureDetector(
+                  onTap: () {
+                    setState(() {
+                      noExercise += 1000;
+                      saveAndLogTotalCalories(noExercise);
+                    });
+                  },
+                  child: Container(
+                    decoration: BoxDecoration(
+                      color: Colors.red,
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black.withOpacity(0.3),
+                          spreadRadius: 2,
+                          blurRadius: 4,
+                          offset: Offset(0, 2),
+                        ),
+                      ],
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 12.0, vertical: 3.0),
+                      child: Row(
+                        children: [
+                          Icon(Icons.android, color: Colors.white, size: 24),
+                          SizedBox(width: 8),
+                          Text(
+                            'CALORIES MOCKER',
                             style: TextStyle(
                               fontSize: 14,
                               fontWeight: FontWeight.bold,
@@ -754,8 +860,7 @@ class _HomePageState extends State<HomePage>
                     Row(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
-                        Icon(Icons.do_not_step,
-                            color: Colors.teal, size: 24),
+                        Icon(Icons.do_not_step, color: Colors.teal, size: 24),
                         SizedBox(width: 8),
                         Text(
                           '${noSteps} / $goalSteps',
@@ -1154,7 +1259,6 @@ class _HomePageState extends State<HomePage>
     // Update Firestore
     FirebaseAuth auth = FirebaseAuth.instance;
     User? user = auth.currentUser;
-    return;
     if (user != null) {
       try {
         await _firestore
