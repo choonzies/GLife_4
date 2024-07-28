@@ -32,9 +32,13 @@ fonts:
 
 dev_dependencies:
   flutter_launcher_icons: ^0.13.1
-  flutter_test:
+  flutter_driver:
     sdk: flutter
+  test:
+  # flutter_test:
+  #   sdk: flutter
   flutter_lints: ^4.0.0
+  
 
 
 flutter:

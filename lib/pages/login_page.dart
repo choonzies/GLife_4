@@ -106,6 +106,7 @@ class _LoginPageState extends State<LoginPage> {
   Widget _entryField(
       String title, TextEditingController controller, bool isPassword) {
     return TextFormField(
+      key: Key('${title.toLowerCase()}-field'),
       controller: controller,
       obscureText: isPassword && !isPasswordVisible,
       decoration: InputDecoration(
@@ -130,12 +131,16 @@ class _LoginPageState extends State<LoginPage> {
   }
 
   Widget _errorMessage() {
-    return Text(errorMessage == '' ? '' : errorMessage!,
-        style: TextStyle(color: Colors.red));
-  }
+  return Text(
+    errorMessage == '' ? '' : errorMessage!,
+    key: Key('error-message'), // Adding the Key here
+    style: TextStyle(color: Colors.red),
+  );
+}
 
   Widget _submitButton() {
     return ElevatedButton(
+      key: Key('login-button'),
       onPressed:
           isLogin ? signInWithEmailAndPassword : createUserWithEmailAndPassword,
       child: Text(isLogin ? 'Login' : 'Register'),
