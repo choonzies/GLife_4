@@ -657,7 +657,7 @@ class _HomePageState extends State<HomePage>
           ),
           Positioned(
             right: 10,
-            top: 660,
+            top: 440,
             child: Builder(
               builder: (context) {
                 return GestureDetector(
@@ -705,7 +705,7 @@ class _HomePageState extends State<HomePage>
           ),
           Positioned(
             right: 10,
-            top: 700,
+            top: 475,
             child: Builder(
               builder: (context) {
                 return GestureDetector(
