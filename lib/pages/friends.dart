@@ -1,9 +1,8 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
-import 'groups.dart'; // Import the Groups page
+import 'groups.dart';
 import 'package:glife/pages/user_details.dart';
-import 'package:glife/pages/home_page.dart';
 
 class Friends extends StatefulWidget {
   Friends({Key? key}) : super(key: key);

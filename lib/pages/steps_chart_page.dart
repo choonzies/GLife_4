@@ -29,11 +29,11 @@ class _StepsChartPageState extends State<StepsChartPage> {
       HealthDataType.STEPS,
     ];
 
-    bool permission = await Health().requestAuthorization(types);
-    if (!permission) {
-      debugPrint('Authorization not granted');
-      return;
-    }
+    // bool permission = await Health().requestAuthorization(types);
+    // if (!permission) {
+    //   debugPrint('Authorization not granted');
+    //   return;
+    // }
 
     var now = DateTime.now();
     var startOfWeek =

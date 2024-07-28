@@ -31,11 +31,11 @@ class _ActiveEnergyChartPageState extends State<ActiveEnergyChartPage> {
       HealthDataType.ACTIVE_ENERGY_BURNED,
     ];
 
-    bool permission = await Health().requestAuthorization(types);
-    if (!permission) {
-      debugPrint('Authorization not granted');
-      return;
-    }
+    // bool permission = await Health().requestAuthorization(types);
+    // if (!permission) {
+    //   debugPrint('Authorization not granted');
+    //   return;
+    // }
 
     var now = DateTime.now();
     var startOfWeek =

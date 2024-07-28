@@ -1,8 +1,4 @@
-import 'dart:ffi';
-import 'dart:ui';
-
 import 'package:flutter/material.dart';
-import 'package:flutter/widgets.dart';
 import 'package:glife/auth.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
@@ -16,7 +12,6 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'dart:async';
 import 'steps_chart_page.dart';
 import 'exercise_chart_page.dart';
-import 'package:carousel_slider/carousel_slider.dart';
 
 class HomePage extends StatefulWidget {
   const HomePage({Key? key}) : super(key: key);
@@ -116,6 +111,7 @@ class _HomePageState extends State<HomePage>
   }
 
   Future<int> fetchStepData() async {
+    return 500;
     int steps = 0;
 
     // Get steps for today (i.e., since midnight)
@@ -149,6 +145,7 @@ class _HomePageState extends State<HomePage>
   }
 
   Future<int> fetchActiveEnergyData() async {
+    return 500;
     int activeCalories = 0;
     var types = [HealthDataType.ACTIVE_ENERGY_BURNED];
 
