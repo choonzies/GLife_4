@@ -179,69 +179,54 @@ class _FriendsState extends State<Friends> {
               child: const Text('Add'),
               onPressed: () async {
                 String friendUsername = textFieldController.text.trim();
-                if (friendUsername.isNotEmpty) {
-                  // Check if the user document exists in Firestore
-                  DocumentSnapshot userDoc = await FirebaseFirestore.instance
-                      .collection('users')
-                      .doc(friendUsername)
-                      .get();
-                  bool userExists = userDoc.exists;
 
-                  if (userExists) {
-                    if (friends.contains(friendUsername)) {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(
-                          content: Text('Already friends!'),
-                          duration: Duration(seconds: 1),
-                        ),
-                      );
-                    } else {
-                      // Send friend request to the friend
-                      String? friendUID =
-                          await getUidByUsername(friendUsername);
-                      if (userDoc.exists && friendUID != null) {
-                        await addFieldListItem(
-                            'users', friendUID, 'friendReqs', username!);
-                      }
-                      Navigator.of(context).pop(); // Close the dialog
-                      showDialog(
-                        context: context,
-                        builder: (context) {
-                          Future.delayed(const Duration(seconds: 1), () {
-                            Navigator.of(context).pop(true);
-                          });
-                          return const AlertDialog(
-                            title: Text('Friend request sent!'),
-                          );
-                        },
-                      );
-                    }
-                  } else {
-                    // Show error dialog for invalid username
-                    showDialog(
-                      context: context,
-                      builder: (context) {
-                        Future.delayed(const Duration(seconds: 1), () {
-                          Navigator.of(context).pop(true);
-                        });
-                        return const AlertDialog(
-                          title: Text('Username not found!'),
-                        );
-                      },
+                if (friendUsername.isNotEmpty) {
+                  // Check if already friends
+                  if (friends.contains(friendUsername)) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(
+                        content: Text('Already friends!'),
+                        duration: Duration(seconds: 1),
+                      ),
                     );
+                  } else {
+                    try {
+                      DocumentSnapshot userDoc = await _firestore
+                          .collection('users')
+                          .doc(user!.uid)
+                          .get();
+                    String? name = await getUidByUsername(friendUsername);
+                      if (userDoc.exists && name != null) {
+                        // Send friend request to the friend
+                        
+                        
+                        await addFieldListItem(
+                            'users', name, 'friendReqs', username!);
+                        Navigator.of(context).pop(); // Close the dialog
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(
+                            content: Text('Friend request sent!'),
+                            duration: Duration(seconds: 1),
+                          ),
+                        );
+                      } else {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(
+                            content: Text('Username not found!'),
+                            duration: Duration(seconds: 1),
+                          ),
+                        );
+                      }
+                    } catch (e) {
+                      print('Error adding friend request: $e');
+                    }
                   }
                 } else {
-                  // Username is empty, show error dialog
-                  showDialog(
-                    context: context,
-                    builder: (context) {
-                      Future.delayed(const Duration(seconds: 1), () {
-                        Navigator.of(context).pop(true);
-                      });
-                      return const AlertDialog(
-                        title: Text('Invalid username!'),
-                      );
-                    },
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(
+                      content: Text('Invalid username!'),
+                      duration: Duration(seconds: 1),
+                    ),
                   );
                 }
               },
@@ -257,6 +242,7 @@ class _FriendsState extends State<Friends> {
       },
     );
   }
+
 
  void _showFriendRequestsDialog() {
     final scaffold = ScaffoldMessenger.of(context);

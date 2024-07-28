@@ -45,7 +45,11 @@ class _HomePageState extends State<HomePage>
   int streak = 0;
   String lastCheckedDate = '';
   int coins = 0;
-  String username = 'User';
+  String username = '';
+
+  void asyncInit() async {
+    await getUsername();
+  }
 
   @override
   void initState() {
@@ -57,6 +61,7 @@ class _HomePageState extends State<HomePage>
     _loadGoals();
     loadStreak();
     _loadCoins();
+    asyncInit();
     getUsername();
     _checkGoalsCompletion();
 
@@ -208,8 +213,8 @@ class _HomePageState extends State<HomePage>
   Future<void> _loadGoals() async {
     SharedPreferences prefs = await SharedPreferences.getInstance();
     setState(() {
-      goalSteps = prefs.getInt('goalSteps') ?? 1000;
-      goalExercise = prefs.getInt('goalExercise') ?? 30;
+      goalSteps = prefs.getInt('goalSteps') ?? 10000;
+      goalExercise = prefs.getInt('goalExercise') ?? 2500;
     });
   }
 
@@ -609,6 +614,7 @@ class _HomePageState extends State<HomePage>
                       MaterialPageRoute(
                         builder: (context) => StorePage(
                           onItemsPurchased: _loadGearUrls,
+                          onCoinsChanged: _reloadCoins,
                         ),
                       ),
                     ).then((_) => setState(() {}));
@@ -1122,6 +1128,13 @@ class _HomePageState extends State<HomePage>
     });
   }
 
+  Future<void> _reloadCoins() async {
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+    setState(() {
+      coins = prefs.getInt('coins') ?? 0;
+    });
+  }
+
   void gainCoins() async {
     bool stepsGoalMet = await checkStepsGoal();
     bool energyGoalMet = await checkEnergyGoal();
@@ -1219,7 +1232,6 @@ class _HomePageState extends State<HomePage>
   }
 
   void logHighestStreak() async {
-    return;
     FirebaseAuth auth = FirebaseAuth.instance;
     User? user = auth.currentUser;
     if (user != null) {
@@ -1237,7 +1249,7 @@ class _HomePageState extends State<HomePage>
     final SharedPreferences prefs = await SharedPreferences.getInstance();
 
     // Retrieve current and previous step counts
-    int totalSteps = prefs.getInt('totalSteps') ?? 0;
+    int totalSteps = prefs.getInt('totalSteps') ?? 500;
     int previousSteps = prefs.getInt('previousSteps') ?? 0;
 
     // Fetch current step data
@@ -1275,7 +1287,7 @@ class _HomePageState extends State<HomePage>
     final SharedPreferences prefs = await SharedPreferences.getInstance();
 
     // Retrieve current and previous step counts
-    int totalCalories = prefs.getInt('totalCalories') ?? 0;
+    int totalCalories = prefs.getInt('totalCalories') ?? 500;
     int previousCalories = prefs.getInt('previousCalories') ?? 0;
 
     // Fetch current step data
@@ -1299,7 +1311,6 @@ class _HomePageState extends State<HomePage>
     FirebaseAuth auth = FirebaseAuth.instance;
     User? user = auth.currentUser;
 
-    return;
     if (user != null) {
       try {
         await _firestore

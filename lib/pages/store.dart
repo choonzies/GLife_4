@@ -3,8 +3,9 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 class StorePage extends StatefulWidget {
   final Function() onItemsPurchased;
+  final Function() onCoinsChanged;
 
-  StorePage({required this.onItemsPurchased});
+  StorePage({required this.onItemsPurchased, required this.onCoinsChanged});
 
   @override
   _StorePageState createState() => _StorePageState();
@@ -29,9 +30,10 @@ class _StorePageState extends State<StorePage> {
   };
 
   Map<String, int> _itemPrices = {
-    'THE OG HELMET': 0,
+    'THE OG HELMET': 10,
     'Helmet 2': 30,
     'Helmet 3': 25,
+    'THE OG CHESTPLATE': 50,
     'Chestplate 1': 35,
     'Chestplate 2': 40,
     'Leggings 1': 25,
@@ -165,17 +167,36 @@ class _StorePageState extends State<StorePage> {
               ),
               trailing: !alreadyOwned
                   ? TextButton(
-                      onPressed: coins >= price
-                          ? () {
-                              setState(() {
-                                _addOwnedItem(category, name);
-                                coins -= price;
-                                _saveOwnedItems();
-                                _saveCoins(coins);
-                                widget.onItemsPurchased();
-                              });
-                            }
-                          : null,
+                      onPressed: () {
+                        if (coins >= price) {
+                          setState(() {
+                            _addOwnedItem(category, name);
+                            coins -= price;
+                            _saveOwnedItems();
+                            _saveCoins(coins);
+                            widget.onItemsPurchased();
+                            widget.onCoinsChanged();
+                          });
+                        } else {
+                          // Show dialog when coins are insufficient
+                          showDialog(
+                            context: context,
+                            builder: (BuildContext context) {
+                              return AlertDialog(
+                                title: Text("Insufficient Coins!"),
+                                actions: [
+                                  TextButton(
+                                    onPressed: () {
+                                      Navigator.of(context).pop();
+                                    },
+                                    child: Text("OK"),
+                                  ),
+                                ],
+                              );
+                            },
+                          );
+                        }
+                      },
                       child: Text(
                         'Buy for $price coins',
                         style: TextStyle(
