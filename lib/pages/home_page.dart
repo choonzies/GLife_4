@@ -108,7 +108,7 @@ class _HomePageState extends State<HomePage>
   }
 
   Future<void> _checkAndRequestHealthAccess() async {
-    var types = [HealthDataType.STEPS, HealthDataType.EXERCISE_TIME];
+    var types = [HealthDataType.STEPS, HealthDataType.ACTIVE_ENERGY_BURNED];
     bool accessGranted = await Health().requestAuthorization(types);
     if (!accessGranted) {
       print("Health access not granted");
@@ -213,8 +213,10 @@ class _HomePageState extends State<HomePage>
   Future<void> _loadGoals() async {
     SharedPreferences prefs = await SharedPreferences.getInstance();
     setState(() {
+
       goalSteps = prefs.getInt('goalSteps') ?? 10000;
       goalExercise = prefs.getInt('goalExercise') ?? 2500;
+
     });
   }
 

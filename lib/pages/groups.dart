@@ -116,7 +116,7 @@ class _GroupsState extends State<Groups> {
   Future<void> deleteFieldListItem(
       String collection, String document, String field, String item) async {
     try {
-      await _firestore.collection(collection).doc(user!.uid).update({
+       _firestore.collection(collection).doc(user!.uid).update({
         field: FieldValue.arrayRemove([item]),
       });
       print('Item removed from ListField successfully');
@@ -128,7 +128,7 @@ class _GroupsState extends State<Groups> {
   Future<void> addFieldListItem(
       String collection, String document, String field, String item) async {
     try {
-      await _firestore.collection(collection).doc(document).update({
+       _firestore.collection(collection).doc(document).update({
         field: FieldValue.arrayUnion([item]),
       });
       print('Item added to ListField successfully');
@@ -144,7 +144,7 @@ class _GroupsState extends State<Groups> {
   }
 
   Future<void> _initializeData() async {
-    await _getUsername();
+     _getUsername();
     fetchGroups();
     fetchGroupReqs();
     fetchFriends();
@@ -289,14 +289,14 @@ class _GroupsState extends State<Groups> {
   void _createGroup(String groupName) async {
     for (String friend in selectedFriends) {
       String? uid = await getUidByUsername(friend);
-      await addFieldListItem('users', uid!, 'groupReqs', groupName);
+       addFieldListItem('users', uid!, 'groupReqs', groupName);
     }
-    await _firestore.collection('groups').doc(groupName).set({
+     _firestore.collection('groups').doc(groupName).set({
       'leader': username,
       'admin': [],
       'members': [username],
     });
-    await addFieldListItem('users', user!.uid, 'groups', groupName);
+     addFieldListItem('users', user!.uid, 'groups', groupName);
     setState(() {
       groups.add(groupName);
     });
@@ -325,6 +325,7 @@ class _GroupsState extends State<Groups> {
                           IconButton(
                             icon: const Icon(Icons.check),
                             onPressed: () async {
+
                               await addFieldListItem('users', user!.uid,
                                   'groups', groupReqs[index]);
                               await deleteFieldListItem('users', user!.uid,
@@ -332,6 +333,7 @@ class _GroupsState extends State<Groups> {
 
                               await addFieldListItem('groups', groupReqs[index],
                                   'members', username);
+
                               setState(() {
                                 groups.add(groupReqs[index]);
                                 filteredGroups.add(groupReqs[index]);
@@ -348,8 +350,10 @@ class _GroupsState extends State<Groups> {
                           IconButton(
                             icon: const Icon(Icons.close),
                             onPressed: () async {
+
                               await deleteFieldListItem('users', user!.uid,
                                   'groupReqs', groupReqs[index]);
+
                               setState(() {
                                 groupReqs.removeAt(index);
                               });

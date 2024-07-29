@@ -26,7 +26,7 @@ class _FriendsState extends State<Friends> {
   }
 
   Future<void> _initializeData() async {
-    await _getUsername();
+     _getUsername();
     fetchFriends();
     fetchFriendReqs();
   }
@@ -56,12 +56,14 @@ class _FriendsState extends State<Friends> {
       try {
         DocumentSnapshot userDoc =
             await _firestore.collection('users').doc(user!.uid).get();
+
         if (userDoc.exists) {
           if (mounted) {
             setState(() {
               username = userDoc.get('username');
             });
           }
+
         } else {
           print('User document does not exist');
         }
@@ -97,11 +99,13 @@ class _FriendsState extends State<Friends> {
       DocumentSnapshot userDoc =
           await _firestore.collection('users').doc(user!.uid).get();
       if (userDoc.exists) {
+
         if (mounted) {
           setState(() {
             friendReqs = userDoc.get('friendReqs') ?? [];
           });
         }
+
       } else {
         print('Document does not exist for username: $username');
       }
@@ -110,10 +114,9 @@ class _FriendsState extends State<Friends> {
     }
   }
 
-  Future<void> deleteFieldListItem(
-      String collection, String document, String field, String item) async {
+  Future<void> deleteFieldListItem(String collection, String document, String field, String item) async {
     try {
-      await _firestore.collection(collection).doc(document).update({
+       _firestore.collection(collection).doc(document).update({
         field: FieldValue.arrayRemove([item]),
       });
       print('Item removed from ListField successfully');
@@ -122,10 +125,9 @@ class _FriendsState extends State<Friends> {
     }
   }
 
-  Future<void> addFieldListItem(
-      String collection, String document, String field, String item) async {
+  Future<void> addFieldListItem(String collection, String document, String field, String item) async {
     try {
-      await _firestore.collection(collection).doc(document).update({
+       _firestore.collection(collection).doc(document).update({
         field: FieldValue.arrayUnion([item]),
       });
       print('Item added to ListField successfully');
@@ -191,16 +193,11 @@ class _FriendsState extends State<Friends> {
                     );
                   } else {
                     try {
-                      DocumentSnapshot userDoc = await _firestore
-                          .collection('users')
-                          .doc(user!.uid)
-                          .get();
+                      
                     String? name = await getUidByUsername(friendUsername);
-                      if (userDoc.exists && name != null) {
+                      if (name != null) {
                         // Send friend request to the friend
-                        
-                        
-                        await addFieldListItem(
+                          addFieldListItem(
                             'users', name, 'friendReqs', username!);
                         Navigator.of(context).pop(); // Close the dialog
                         ScaffoldMessenger.of(context).showSnackBar(
@@ -273,9 +270,11 @@ class _FriendsState extends State<Friends> {
                           await addFieldListItem(
                               'users', user!.uid, 'friends', friendReqs[index]);
 
+
                           // Add yourself to friend's friends list
                           String? friendUID =
                               await getUidByUsername(friendReqs[index]);
+
 
                           if (friendUID != null) {
                             await addFieldListItem(
@@ -306,6 +305,7 @@ class _FriendsState extends State<Friends> {
                             onPressed: () async {
                               // Firebase stuff - delete from friendReqs
                               await deleteFieldListItem('users', user!.uid, 'friendReqs', friendReqs[index]);
+
 
                               // Handle reject friend request
                               scaffold.showSnackBar(
